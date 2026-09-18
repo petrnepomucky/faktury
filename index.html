@@ -379,10 +379,13 @@ dialog::backdrop{background:rgba(29,39,47,.55)}
         <div class="hledani"><input id="k-hledat" class="pole" type="search" placeholder="Hledat materiál, kód nebo EAN" autocomplete="off" aria-label="Hledat v katalogu"></div>
         <div class="pas-info">
           <label class="zatrzitko"><input type="checkbox" id="k-skladem"> Jen skladem</label>
-          <span id="k-stav">Katalog se načítá…</span>
+          <span style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
+            <span id="k-stav">Katalog se načítá…</span>
+            <button class="btn btn-tichy btn-maly" type="button" id="k-obnovit">Načíst ceny znovu</button>
+          </span>
         </div>
       </div>
-      <div class="seznam" id="k-seznam"><div class="prazdno">Začni psát, co hledáš – třeba „ytong 60x25“ nebo „cw 75“.</div></div>
+      <div class="seznam" id="k-seznam"><div class="prazdno">Katalog se načítá…</div></div>
     </section>
 
     <!-- CENÍK -->
@@ -390,6 +393,7 @@ dialog::backdrop{background:rgba(29,39,47,.55)}
       <div class="nastroje">
         <input id="c-filtr" class="pole" type="search" placeholder="Filtrovat ceník" aria-label="Filtrovat ceník">
         <label class="zatrzitko"><input type="checkbox" id="c-kontrola"> Jen ke kontrole</label>
+        <button class="btn btn-tichy" id="c-prepocet">Přepočítat podle katalogu</button>
         <button class="btn btn-metr" id="c-pridat">Přidat položku</button>
       </div>
       <div class="seznam" id="c-seznam"><div class="prazdno">Načítám ceník…</div></div>
@@ -746,12 +750,31 @@ $('#f-firma').addEventListener('submit', async e => {
 });
 
 /* ================= KATALOG ================= */
+function uvodKatalogu(pocet) {
+  return `<div class="prazdno" style="text-align:left;padding:1.4rem 1.2rem">
+    <p style="margin-top:0"><strong>${pocet != null ? ks(pocet) + ' položek' : 'Katalog'}</strong> od dodavatele STAVIMEX, připravených k vložení do nabídky.
+    Začni psát název, kód nebo EAN – třeba „ytong 60x25“, „sádrokarton“ nebo „cw 75“.</p>
+    <p><strong>Odkud se ceny berou:</strong> dodavatel každou noc vyexportuje svůj ceník a skladové zásoby.
+    Aplikace si je sama načte ráno, takže vidíš ceny a dostupnost z posledního exportu.
+    Tlačítkem „Načíst ceny znovu“ si je stáhneš kdykoli během dne.</p>
+    <p><strong>Jak to spolu souvisí:</strong> z katalogu si položku uložíš do svého <em>ceníku</em>, kde si nastavíš přirážku.
+    Ceník pak plní <em>nabídky, smlouvy a faktury</em> a <em>kalkulačky</em> z něj berou ceny materiálu.
+    Když se u dodavatele změní nákupní cena, ceník tě na to upozorní a tlačítkem ho přepočítáš.</p>
+    <p style="margin-bottom:0"><strong>Ceny na hotových dokladech se nikdy nemění.</strong> Do dokladu se opíšou v okamžiku vystavení,
+    takže noční import ti nepřepíše to, co už má zákazník v ruce.</p>
+  </div>`;
+}
+
 async function nactiStavKatalogu() {
   const { data } = await sb.from('dodavatele').select('nazev, posledni_import').eq('aktivni', true);
   const d = (data || []).filter(x => x.posledni_import).sort((a, b) => b.posledni_import.localeCompare(a.posledni_import))[0];
   $('#k-stav').textContent = d
     ? 'Ceny a zásoby ' + d.nazev + ' k ' + new Date(d.posledni_import).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })
     : 'Katalog zatím nemá data.';
+
+  const { count } = await sb.from('katalog').select('id', { count: 'exact', head: true }).eq('aktivni', true);
+  stav.pocetKatalog = count ?? null;
+  if ($('#k-hledat').value.trim().length < 2) $('#k-seznam').innerHTML = uvodKatalogu(stav.pocetKatalog);
 }
 
 let sloupecHledani = 'nazev_hled';   // spadne na 'nazev', když sloupec v databázi ještě není
@@ -781,6 +804,54 @@ async function hledejKatalog(dotazText, limit = 60) {
   return data || [];
 }
 
+/** Ruční načtení cen z feedu. Funkce si sama hlídá, aby nestahovala pořád dokola. */
+async function obnovKatalog(tlacitko) {
+  const puvodni = tlacitko.textContent;
+  tlacitko.disabled = true; tlacitko.textContent = 'Načítám…';
+  const { data, error } = await sb.functions.invoke('import-feed', { body: {} });
+  tlacitko.disabled = false; tlacitko.textContent = puvodni;
+  if (error || data?.chyba) { toast('Načtení selhalo: ' + (data?.chyba || prelozChybu(error)), true); return false; }
+  stav.katalogCeny = {};
+  await nactiStavKatalogu();
+  await nactiCenik();
+  if ($('#k-hledat').value.trim().length >= 2) hledej();
+  toast(data.preskoceno ? data.zprava : `Načteno ${ks(data.importovano)} položek z ceníku dodavatele.`);
+  return true;
+}
+$('#k-obnovit').addEventListener('click', e => obnovKatalog(e.target));
+
+/** Hromadný přepočet ceníku: převezme dnešní nákupní ceny a drží tvou přirážku. */
+$('#c-prepocet').addEventListener('click', async e => {
+  const kandidati = stav.cenik.filter(c => {
+    const d = nakupDnes(c.katalog_id);
+    return d != null && c.nakupni_bez_dph != null && zaokr(c.nakupni_bez_dph) !== d;
+  });
+  if (!kandidati.length) return toast('Ceník odpovídá katalogu, není co přepočítat.');
+
+  const zdrazilo = kandidati.filter(c => nakupDnes(c.katalog_id) > c.nakupni_bez_dph).length;
+  if (!confirm(`Přepočítat ${kandidati.length} ${kandidati.length === 1 ? 'položku' : 'položek'} podle dnešního katalogu?\n\n`
+    + `Zdražilo: ${zdrazilo}, zlevnilo: ${kandidati.length - zdrazilo}.\n`
+    + `Nákupní cena se převezme z katalogu a prodejní se dopočítá tvojí přirážkou.\n`
+    + `Položky s nulovou přirážkou zůstanou beze změny.`)) return;
+
+  e.target.disabled = true;
+  let zmeneno = 0, preskoceno = 0;
+  for (const c of kandidati) {
+    const novy = nakupDnes(c.katalog_id);
+    const prirazka = Number(c.prirazka_pct) || 0;
+    if (!prirazka) { preskoceno++; continue; }
+    const { error } = await sb.from('cenik').update({
+      nakupni_bez_dph: novy,
+      prodejni_bez_dph: zaokr(novy * (1 + prirazka / 100))
+    }).eq('id', c.id);
+    if (error) { toast('Přepočet selhal: ' + prelozChybu(error), true); break; }
+    zmeneno++;
+  }
+  e.target.disabled = false;
+  await nactiCenik();
+  toast(`Přepočteno ${zmeneno} položek.` + (preskoceno ? ` ${preskoceno} bez přirážky jsem nechal být.` : ''));
+});
+
 let hledaniCislo = 0, hledaniCas;
 $('#k-hledat').addEventListener('input', () => { clearTimeout(hledaniCas); hledaniCas = setTimeout(hledej, 300); });
 $('#k-skladem').addEventListener('change', () => vykresliKatalog());
@@ -790,7 +861,7 @@ async function hledej() {
   const q = $('#k-hledat').value.trim();
   if (q.length < 2) {
     stav.katalog = [];
-    $('#k-seznam').innerHTML = '<div class="prazdno">Začni psát, co hledáš – třeba „ytong 60x25“ nebo „cw 75“.</div>';
+    $('#k-seznam').innerHTML = uvodKatalogu(stav.pocetKatalog);
     return;
   }
   const data = await hledejKatalog(q);
