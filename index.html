@@ -2,2635 +2,487 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>YeY – Kancelář pro řemeslníky</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📏</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FakturaPRO — nabídky, faktury a protokoly pro řemeslníky</title>
+<meta name="description" content="Chytrý offline nástroj pro řemeslníky a živnostníky. Kontakty, ceník, nabídky, faktury s QR platbou a předávací protokoly — propojené na pár kliknutí. Rozšíření o XML feed s 5 000 stavebními položkami k okamžité poptávce.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap&subset=latin-ext" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{
-  --papir:#F4F5F2; --karta:#FFFFFF; --inkoust:#1D272F; --ocel:#5D6B76;
-  --linka:#D8DCD6; --metr:#F2B705; --sklad:#2B7A4B; --pozor:#B3261E; --r:10px;
-  color-scheme: light;
-}
-*{box-sizing:border-box}
-html,body{margin:0}
-body{font:16px/1.5 'Barlow',system-ui,'Segoe UI',sans-serif;color:var(--inkoust);background:var(--papir);-webkit-font-smoothing:antialiased}
-h1,h2,h3,.cena,.tab,.znacka{font-family:'Barlow Condensed','Barlow',system-ui,sans-serif}
-h1,h2,h3{margin:0;line-height:1.15}
-button,input,select,textarea{font:inherit;color:inherit}
-:focus-visible{outline:3px solid var(--inkoust);outline-offset:2px}
-.skryt{display:none!important}
-a{color:inherit}
+  :root{
+    --navy:#15233c; --navy-2:#1e3357; --navy-3:#27406a;
+    --gold:#b0894e; --gold-2:#c9a468; --gold-ink:#9a742a;
+    --cream:#faf8f3; --paper:#ffffff; --ink:#232a34; --muted:#647084;
+    --line:#e7e1d4; --line-2:#eef0f3;
+    --ok:#2f7d55;
+    --shadow-sm:0 1px 2px rgba(21,35,60,.06), 0 4px 14px rgba(21,35,60,.06);
+    --shadow-md:0 10px 30px rgba(21,35,60,.12);
+    --shadow-lg:0 24px 60px rgba(21,35,60,.22);
+    --r:16px;
+    --font:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{line-height:1.15;margin:0;letter-spacing:-.02em;color:var(--navy)}
+  h1{font-size:clamp(2rem,5vw,3.6rem);font-weight:800}
+  h2{font-size:clamp(1.6rem,3.4vw,2.6rem);font-weight:800}
+  h3{font-size:1.18rem;font-weight:700}
+  p{margin:0}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+  .btn{display:inline-flex;align-items:center;gap:9px;border:0;border-radius:999px;padding:14px 26px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;transition:transform .15s ease, box-shadow .15s ease, background .15s ease;white-space:nowrap}
+  .btn.primary{background:linear-gradient(120deg,var(--gold),var(--gold-2));color:#fff;box-shadow:0 8px 22px rgba(176,137,78,.4)}
+  .btn.primary:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(176,137,78,.5)}
+  .btn.ghost{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.28)}
+  .btn.ghost:hover{background:rgba(255,255,255,.16)}
+  .btn.dark{background:var(--navy);color:#fff;box-shadow:var(--shadow-md)}
+  .btn.dark:hover{transform:translateY(-2px)}
+  .btn.lg{padding:17px 34px;font-size:1.08rem}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.82rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-ink)}
+  .eyebrow.light{color:var(--gold-2)}
+  .muted{color:var(--muted)}
 
-.metr{background:var(--metr);position:relative}
-.metr::after{content:"";position:absolute;left:0;right:0;bottom:0;height:12px;pointer-events:none;
-  background:repeating-linear-gradient(90deg,var(--inkoust) 0 2px,transparent 2px 60px) 0 100%/100% 12px no-repeat,
-             repeating-linear-gradient(90deg,var(--inkoust) 0 1px,transparent 1px 12px) 0 100%/100% 6px no-repeat;opacity:.6}
+  /* HEADER */
+  header.nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--line-2)}
+  .nav-in{display:flex;align-items:center;gap:18px;height:70px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:800;color:var(--navy);font-size:1.24rem;letter-spacing:-.02em}
+  .brand .logo{flex:0 0 auto}
+  .nav-links{display:flex;gap:26px;margin-left:auto}
+  .nav-links a{font-weight:600;color:var(--navy);font-size:.98rem;opacity:.82;transition:opacity .15s}
+  .nav-links a:hover{opacity:1}
+  .nav-cta{margin-left:8px}
+  .burger{display:none;margin-left:auto;background:none;border:0;cursor:pointer;padding:8px}
+  .burger span{display:block;width:24px;height:2px;background:var(--navy);margin:5px 0;border-radius:2px;transition:.2s}
 
-.btn{border:0;border-radius:8px;padding:.6rem 1rem;font-weight:600;cursor:pointer;background:var(--inkoust);color:#fff;display:inline-flex;align-items:center;gap:.4rem;justify-content:center;text-decoration:none;line-height:1.2}
-.btn:hover{background:#2E3B45}
-.btn:disabled{opacity:.5;cursor:default}
-.btn-metr{background:var(--metr);color:var(--inkoust)}
-.btn-metr:hover{background:#E0A800}
-.btn-tichy{background:transparent;color:var(--inkoust);border:1px solid var(--linka)}
-.btn-tichy:hover{background:#EBEDE8}
-.btn-pozor{background:transparent;color:var(--pozor);border:1px solid #E3B8B5}
-.btn-pozor:hover{background:#FBEDEC}
-.btn-maly{padding:.35rem .65rem;font-size:.9rem}
-.odkaz{background:none;border:0;padding:0;color:var(--ocel);text-decoration:underline;cursor:pointer}
-label{display:block;font-weight:500;font-size:.9rem;margin-bottom:.25rem}
-.pole{width:100%;padding:.55rem .7rem;border:1px solid #BFC5BF;border-radius:8px;background:#fff}
-.pole:focus{border-color:var(--inkoust);outline:none;box-shadow:0 0 0 3px rgba(29,39,47,.15)}
-.radek{margin-bottom:.9rem}
-.mrizka{display:grid;gap:.9rem;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-.napoveda{font-size:.85rem;color:var(--ocel);margin:.25rem 0 0}
-.chyba{color:var(--pozor)}
-.vpravo{text-align:right}
+  /* HERO */
+  .hero{position:relative;overflow:hidden;background:radial-gradient(1200px 600px at 78% -10%,rgba(201,164,104,.22),transparent 60%),linear-gradient(160deg,var(--navy) 0%,var(--navy-2) 55%,#182a49 100%);color:#fff}
+  .hero::after{content:"";position:absolute;right:-160px;top:-160px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(201,164,104,.28),transparent 65%);pointer-events:none}
+  .hero-in{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;padding:78px 0 92px}
+  .hero h1{color:#fff;margin:18px 0 0}
+  .hero h1 .hl{background:linear-gradient(120deg,var(--gold-2),#e6cfa3);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero .lead{margin-top:20px;font-size:1.18rem;color:#d7deea;max-width:33ch}
+  .hero-cta{display:flex;gap:14px;margin-top:32px;flex-wrap:wrap}
+  .hero-trust{display:flex;gap:22px;margin-top:30px;flex-wrap:wrap;color:#c4cddc;font-size:.92rem;font-weight:600}
+  .hero-trust span{display:flex;align-items:center;gap:8px}
+  .tick{color:var(--gold-2)}
 
-#obr-prihlaseni,#obr-heslo{min-height:100vh;display:grid;place-items:center;padding:1.5rem}
-.vstup{width:100%;max-width:400px;background:var(--karta);border-radius:var(--r);overflow:hidden;border:1px solid var(--linka)}
-.vstup .metr{padding:1.4rem 1.5rem 1.9rem}
-.znacka{font-size:2.4rem;font-weight:700;line-height:1}
-.znacka-pod{font-weight:500;margin-top:.2rem}
-.vstup form{padding:1.5rem}
-.vstup h2{font-size:1.5rem;margin-bottom:1rem}
-.vstup .btn{width:100%;margin-top:.3rem}
-.prepinace{display:flex;justify-content:space-between;gap:1rem;margin-top:1rem;flex-wrap:wrap}
-.hlaska{margin-top:.8rem;font-size:.95rem}
+  /* HERO MOCK */
+  .mock{position:relative}
+  .win{position:relative;z-index:1;background:#fff;border-radius:14px;box-shadow:var(--shadow-lg);overflow:hidden;transform:perspective(1400px) rotateY(-9deg) rotateX(3deg);transition:transform .4s ease}
+  .mock:hover .win{transform:perspective(1400px) rotateY(-4deg) rotateX(1deg)}
+  .win-bar{display:flex;align-items:center;gap:7px;padding:11px 14px;background:#f3f4f7;border-bottom:1px solid #e7e9ee}
+  .win-bar i{width:11px;height:11px;border-radius:50%;background:#d6d9e0;display:block}
+  .win-bar i:nth-child(1){background:#f0a8a0}.win-bar i:nth-child(2){background:#f3d09a}.win-bar i:nth-child(3){background:#a7d9b4}
+  .win-tabs{display:flex;gap:4px;padding:9px 14px 0;background:#fff;border-bottom:1px solid var(--line-2);flex-wrap:wrap}
+  .win-tabs span{font-size:.72rem;font-weight:700;color:var(--muted);padding:6px 10px;border-radius:8px 8px 0 0}
+  .win-tabs span.on{background:var(--navy);color:#fff}
+  .doc{padding:20px}
+  .doc-top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--gold);padding-bottom:12px}
+  .doc-brand{display:flex;align-items:center;gap:10px}
+  .doc-brand .lg{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--navy),var(--navy-3));display:flex;align-items:center;justify-content:center;color:var(--gold-2);font-weight:800;font-size:1rem}
+  .doc-name{font-weight:800;color:var(--navy);font-size:.98rem;line-height:1.1}
+  .doc-sub{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-ink)}
+  .doc-t1{font-size:.6rem;letter-spacing:.2em;color:var(--gold-ink);text-align:right}
+  .doc-t2{font-size:1.3rem;font-weight:800;color:var(--navy);text-align:right;line-height:1}
+  .doc table{width:100%;border-collapse:collapse;margin-top:14px;font-size:.72rem}
+  .doc th{text-align:left;font-size:.56rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1.5px solid var(--navy);padding:6px 4px}
+  .doc td{padding:7px 4px;border-bottom:1px solid #eee;color:#3a4256}
+  .doc td.r,.doc th.r{text-align:right}
+  .doc .cat{color:var(--gold-ink);font-weight:700}
+  .doc-bottom{display:flex;justify-content:space-between;align-items:flex-end;margin-top:14px;gap:12px}
+  .qr{width:58px;height:58px;border-radius:8px;background:
+      linear-gradient(90deg,#15233c 2px,transparent 0) 0 0/12px 12px,
+      linear-gradient(#15233c 2px,transparent 0) 0 0/12px 12px,#fff;
+      border:3px solid #15233c;opacity:.9;flex:0 0 auto}
+  .doc-total{flex:1;background:var(--navy);color:#fff;border-radius:10px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center}
+  .doc-total b{font-size:1.12rem;color:#fff}
+  .doc-total .lbl{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-2)}
+  .badge-float{position:absolute;z-index:6;background:#fff;border-radius:12px;box-shadow:var(--shadow-md);padding:11px 15px;font-weight:700;color:var(--navy);font-size:.86rem;display:flex;align-items:center;gap:9px}
+  .badge-float .ic{width:30px;height:30px;border-radius:8px;background:var(--cream);display:flex;align-items:center;justify-content:center}
+  .bf-1{left:-26px;top:34%;animation:float 5s ease-in-out infinite}
+  .bf-2{right:-20px;bottom:16%;animation:float 5s ease-in-out infinite .8s}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
 
-.hlavicka{background:var(--inkoust);color:#fff}
-.hlavicka-in{max-width:1080px;margin:0 auto;padding:.7rem 1rem;display:flex;align-items:center;gap:1rem}
-.hlavicka .znacka{font-size:1.6rem;color:var(--metr)}
-.firma-nazev{font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.uzivatel{font-size:.85rem;opacity:.75}
-.hlavicka .btn-tichy{color:#fff;border-color:#48555F;padding:.4rem .8rem}
-.hlavicka .btn-tichy:hover{background:#2E3B45}
+  /* SECTIONS */
+  section{padding:88px 0}
+  .sec-head{text-align:center;max-width:720px;margin:0 auto 54px}
+  .sec-head h2{margin-top:12px}
+  .sec-head p{margin-top:14px;font-size:1.1rem;color:var(--muted)}
 
-.taby{background:var(--karta);border-bottom:1px solid var(--linka)}
-.taby-in{max-width:1080px;margin:0 auto;display:flex;padding:0 1rem}
-.tab{background:none;border:0;padding:.8rem 1rem;font-size:1.1rem;font-weight:600;color:var(--ocel);cursor:pointer;border-bottom:4px solid transparent}
-.tab[aria-selected="true"]{color:var(--inkoust);border-bottom-color:var(--metr)}
+  /* FEATURES */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .card{background:#fff;border:1px solid var(--line-2);border-radius:var(--r);padding:28px;box-shadow:var(--shadow-sm);transition:transform .2s ease, box-shadow .2s ease}
+  .card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
+  .card .ic{width:52px;height:52px;border-radius:13px;background:linear-gradient(135deg,var(--cream),#fff);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;margin-bottom:16px;color:var(--gold-ink)}
+  .card h3{margin-bottom:8px}
+  .card p{color:var(--muted);font-size:.98rem}
+  .card .ic svg{width:26px;height:26px}
 
-main{max-width:1080px;margin:0 auto;padding:1.2rem 1rem 6rem}
-.pas{border-radius:var(--r);padding:1rem 1rem 1.8rem;margin-bottom:1rem}
-.hledani .pole{font-size:1.1rem;padding:.7rem .9rem;border:2px solid var(--inkoust)}
-.pas-info{display:flex;gap:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:.6rem;font-size:.92rem}
-.zatrzitko{display:inline-flex;align-items:center;gap:.4rem;font-weight:500;margin:0;cursor:pointer}
-.zatrzitko input{width:1.1rem;height:1.1rem;accent-color:var(--inkoust)}
+  /* FLOW */
+  .flow-sec{background:linear-gradient(180deg,var(--cream),#fff)}
+  .flow{display:flex;align-items:stretch;justify-content:center;gap:0;flex-wrap:wrap}
+  .step{flex:1;min-width:180px;max-width:250px;background:#fff;border:1px solid var(--line-2);border-radius:var(--r);padding:24px;text-align:center;box-shadow:var(--shadow-sm);position:relative}
+  .step .n{width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+  .step h3{font-size:1.05rem}
+  .step p{color:var(--muted);font-size:.9rem;margin-top:6px}
+  .arrow{display:flex;align-items:center;justify-content:center;color:var(--gold);flex:0 0 46px;font-size:1.6rem;font-weight:800}
+  .flow-note{text-align:center;margin-top:30px;font-size:1.05rem;color:var(--navy);font-weight:600}
+  .flow-note b{color:var(--gold-ink)}
 
-.seznam{background:var(--karta);border:1px solid var(--linka);border-radius:var(--r);overflow:hidden}
-.prazdno{padding:2rem 1.2rem;color:var(--ocel);text-align:center}
-.nastroje{display:flex;gap:.6rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap}
-.nastroje .pole{flex:1;min-width:160px}
+  /* STATS */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:14px}
+  .stat{text-align:center;padding:18px}
+  .stat .num{font-size:2.4rem;font-weight:800;color:var(--navy);letter-spacing:-.03em}
+  .stat .lbl{color:var(--muted);font-weight:600;font-size:.94rem;margin-top:2px}
 
-.polozka{display:grid;grid-template-columns:72px 1fr auto;gap:.9rem;padding:.85rem 1rem;border-top:1px solid var(--linka);align-items:center}
-.polozka:first-child{border-top:0}
-.obr{width:72px;height:72px;border-radius:6px;background:#EEF0EC;display:grid;place-items:center;overflow:hidden}
-.obr img{width:100%;height:100%;object-fit:contain;background:#fff}
-.obr.bez-obr::after{content:"📦";font-size:1.6rem;opacity:.45}
-.p-nazev{font-weight:600;line-height:1.25}
-.p-meta{font-size:.85rem;color:var(--ocel);margin-top:.15rem}
-.stitky{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.35rem}
-.stitek{font-size:.78rem;font-weight:600;padding:.1rem .45rem;border-radius:4px;background:#EEF0EC;color:var(--ocel);white-space:nowrap}
-.stitek.ok{background:#E3F1E8;color:var(--sklad)}
-.stitek.v-ceniku{background:var(--metr);color:var(--inkoust)}
-.stitek.varovani{background:#FBEDEC;color:var(--pozor)}
-.p-vpravo{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:.4rem}
-.cena{font-size:1.4rem;font-weight:700;line-height:1;white-space:nowrap}
-.cena small{font-family:'Barlow',sans-serif;font-size:.72rem;font-weight:500;color:var(--ocel);display:block;margin-top:.15rem}
-.p-akce{display:flex;gap:.4rem}
+  /* FEED */
+  .feed{background:radial-gradient(900px 500px at 15% 0%,rgba(201,164,104,.16),transparent 60%),linear-gradient(160deg,var(--navy),var(--navy-2));color:#fff;border-radius:28px;overflow:hidden;position:relative}
+  .feed-in{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;padding:56px}
+  .feed h2{color:#fff}
+  .feed .lead{color:#d7deea;font-size:1.1rem;margin-top:14px}
+  .feed .big{font-size:clamp(3rem,7vw,5rem);font-weight:800;line-height:1;background:linear-gradient(120deg,var(--gold-2),#efd9b1);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .feed ul{list-style:none;padding:0;margin:22px 0 0;display:grid;gap:13px}
+  .feed li{display:flex;gap:12px;align-items:flex-start;color:#e4e9f1}
+  .feed li .tick{flex:0 0 auto;margin-top:2px}
+  .feed .tag{display:inline-block;margin-top:22px;background:rgba(201,164,104,.18);border:1px solid rgba(201,164,104,.4);color:var(--gold-2);padding:8px 16px;border-radius:999px;font-weight:700;font-size:.88rem}
+  .feed-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:8px;min-width:0}
+  .feed-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;transition:background .15s}
+  .feed-row+.feed-row{margin-top:4px}
+  .feed-row:hover{background:rgba(255,255,255,.07)}
+  .feed-row .pic{width:40px;height:40px;border-radius:9px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;flex:0 0 auto;color:var(--gold-2)}
+  .feed-row .t{flex:1;min-width:0}
+  .feed-row .t b{display:block;font-size:.92rem;color:#fff;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .feed-row .t span{font-size:.76rem;color:#aeb9cc}
+  .feed-row .pr{font-weight:800;color:#fff;font-size:.9rem;white-space:nowrap}
+  .feed-row .add{flex:0 0 auto;background:var(--gold);color:#fff;border:0;border-radius:8px;padding:7px 12px;font-weight:700;font-size:.78rem;cursor:pointer;font-family:inherit}
 
-.rada{display:grid;gap:1rem;padding:.8rem 1rem;border-top:1px solid var(--linka);align-items:center;cursor:pointer;width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;font:inherit}
-.rada:first-child{border-top:0}
-.rada:hover{background:#F8F9F6}
-.rada-cenik{grid-template-columns:1fr auto auto}
-.rada-doklad{grid-template-columns:auto 1fr auto auto}
-.rada-kontakt{grid-template-columns:1fr auto}
-.c-ceny{text-align:right;font-size:.85rem;color:var(--ocel);white-space:nowrap}
-.c-ceny .cena{font-size:1.2rem;color:var(--inkoust)}
-.cislo-dokladu{font-family:'Barlow Condensed';font-size:1.25rem;font-weight:700}
+  /* AUDIENCE */
+  .chips{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:10px}
+  .chip{background:#fff;border:1px solid var(--line);border-radius:999px;padding:11px 20px;font-weight:600;color:var(--navy);box-shadow:var(--shadow-sm)}
+  .chip .d{color:var(--gold);margin-right:7px}
 
-.formular{background:var(--karta);border:1px solid var(--linka);border-radius:var(--r);padding:1.3rem;max-width:620px}
-.formular h2{font-size:1.5rem;margin-bottom:1rem}
-.karta{background:var(--karta);border:1px solid var(--linka);border-radius:var(--r);padding:1.1rem;margin-bottom:1rem}
-.karta h2{font-size:1.35rem;margin-bottom:.9rem}
-.lista{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem}
-.lista h1{font-size:1.7rem;flex:1;min-width:140px}
+  /* CTA */
+  .cta{background:linear-gradient(120deg,var(--navy),var(--navy-3));color:#fff;border-radius:28px;text-align:center;padding:66px 32px;position:relative;overflow:hidden}
+  .cta::before{content:"";position:absolute;left:-120px;bottom:-120px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(201,164,104,.25),transparent 65%)}
+  .cta h2{color:#fff;position:relative}
+  .cta p{color:#d7deea;margin:14px auto 0;max-width:52ch;position:relative;font-size:1.1rem}
+  .cta .btn{margin-top:30px;position:relative}
 
-.dp{display:grid;grid-template-columns:minmax(140px,1fr) 66px 86px 58px 58px 100px 150px;gap:.45rem;padding:.55rem .8rem;border-top:1px solid var(--linka);align-items:center}
-.dp .btn-maly{padding:.4rem .55rem;white-space:nowrap}
-.nahled{background:#fff;border:1px solid var(--linka);border-radius:8px;padding:1rem;white-space:pre-line;font-size:.9rem;line-height:1.55;max-height:420px;overflow:auto;margin-top:.6rem}
-.nahled mark{background:#FDF0C4;color:inherit;border-radius:3px;padding:0 .1rem}
-.dp-hlava{background:#EEF0EC;font-size:.8rem;font-weight:600;color:var(--ocel);border-top:0}
-.dp .pole{padding:.4rem .5rem}
-.dp-soucet{font-weight:600;text-align:right;white-space:nowrap}
-.souhrn-doklad{display:flex;justify-content:flex-end;gap:2rem;padding:1rem;border-top:2px solid var(--inkoust);flex-wrap:wrap}
-.souhrn-doklad div{text-align:right}
-.souhrn-doklad .cena{font-size:1.6rem}
+  /* FOOTER */
+  footer{background:#0f1a2e;color:#93a0b7;padding:46px 0 34px;margin-top:0}
+  .foot-in{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center}
+  .foot-brand{display:flex;align-items:center;gap:11px;color:#fff;font-weight:800;font-size:1.15rem}
+  footer .small{font-size:.86rem}
+  footer a{color:#c4cddc}
 
-dialog{border:0;border-radius:var(--r);padding:0;width:min(640px,calc(100% - 1.5rem));max-height:calc(100vh - 2rem)}
-dialog::backdrop{background:rgba(29,39,47,.55)}
-.dlg-hlava{padding:1rem 1.2rem 1.7rem}
-.dlg-hlava h2{font-size:1.4rem;padding-right:2rem}
-.dlg-zavrit{position:absolute;top:.6rem;right:.7rem;background:none;border:0;font-size:1.6rem;line-height:1;cursor:pointer;z-index:1}
-.dlg-telo{padding:1.2rem;overflow:auto;max-height:70vh}
-.souhrn{display:flex;justify-content:space-between;align-items:baseline;background:#EEF0EC;border-radius:8px;padding:.7rem .9rem;margin:.3rem 0 1rem}
-.dlg-pata{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.5rem}
-.dlg-pata .konec{display:flex;gap:.6rem;margin-left:auto}
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease, transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
 
-.chipy{display:flex;gap:.4rem;flex-wrap:wrap}
-.chip{border:1px solid var(--linka);background:#fff;border-radius:999px;padding:.4rem .85rem;font-weight:600;font-size:.92rem;cursor:pointer;display:inline-flex;gap:.35rem;align-items:center}
-.chip:hover{background:#EBEDE8}
-.chip[aria-pressed="true"],.chip.aktivni{background:var(--inkoust);color:#fff;border-color:var(--inkoust)}
-.chip-metr[aria-pressed="true"]{background:var(--metr);color:var(--inkoust);border-color:var(--metr)}
-.schema{background:#fff;border:1px solid var(--linka);border-radius:8px;padding:.6rem;margin:.9rem 0;overflow:hidden}
-.schema svg{width:100%;height:auto;display:block}
-.pole-mj{position:relative}
-.pole-mj .jednotka{position:absolute;right:.6rem;top:50%;transform:translateY(-50%);color:var(--ocel);font-size:.85rem;pointer-events:none}
-.tip{font-size:.83rem;color:var(--ocel);margin:.25rem 0 0}
-.otvor{display:grid;grid-template-columns:1fr 1fr 70px 34px;gap:.5rem;align-items:center;margin-bottom:.5rem}
-.jak{background:#EEF0EC;border-radius:8px;padding:.8rem 1rem;font-size:.9rem;line-height:1.6;margin-top:.9rem;white-space:pre-line}
-.kalk-souhrn{padding:.8rem 1rem;border-top:2px solid var(--inkoust);display:flex;gap:1.5rem;flex-wrap:wrap;font-size:.92rem}
-.kalk-radek{display:grid;grid-template-columns:1fr 110px 70px auto;gap:.6rem;align-items:center;padding:.6rem 1rem;border-top:1px solid var(--linka)}
-.kalk-radek:first-child{border-top:0}
-.kalk-mn{font-family:'Barlow Condensed';font-size:1.25rem;font-weight:700;text-align:right}
-.kalk-vysledek{background:var(--karta);border:1px solid var(--linka);border-radius:var(--r);overflow:hidden;margin-bottom:1rem}
-@media (max-width:640px){.kalk-radek{grid-template-columns:1fr auto;gap:.3rem .6rem}.kalk-radek .kalk-mj{display:none}}
-.p-meta.varovani{color:var(--pozor);font-weight:600}
-.p-meta.pozor{color:#8A6A00;font-weight:600}
-#toast{position:fixed;left:50%;bottom:5.5rem;transform:translateX(-50%);background:var(--inkoust);color:#fff;padding:.7rem 1.1rem;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:60;max-width:calc(100% - 2rem)}
-#toast.chyba{background:var(--pozor)}
-
-/* tisk */
-#tisk{display:none}
-@media print{
-  body{background:#fff}
-  #obr-app,#obr-prihlaseni,#obr-heslo,#toast,dialog{display:none!important}
-  #tisk{display:block;padding:0;font-size:12px}
-  @page{margin:16mm}
-}
-#tisk h1{font-size:22px;margin-bottom:2px}
-#tisk table{width:100%;border-collapse:collapse;margin-top:10px}
-#tisk th,#tisk td{border-bottom:1px solid #999;padding:5px 4px;text-align:left;vertical-align:top}
-#tisk th{background:#eee;font-size:11px;text-transform:uppercase}
-#tisk td.c,#tisk th.c{text-align:right;white-space:nowrap}
-.tisk-hlava{display:flex;justify-content:space-between;gap:2rem;border-bottom:3px solid #000;padding-bottom:8px}
-.tisk-strany{display:flex;gap:2rem;margin-top:14px}
-.tisk-strany>div{flex:1}
-.tisk-strany h3{font-size:12px;text-transform:uppercase;border-bottom:1px solid #999;margin-bottom:4px}
-.tisk-souhrn{margin-top:12px;display:flex;justify-content:flex-end}
-.tisk-souhrn table{width:auto;min-width:240px}
-.tisk-pata{margin-top:26px;font-size:11px;color:#444}
-
-@media (max-width:760px){
-  .dp{grid-template-columns:1fr 1fr;gap:.4rem .5rem}
-  .dp .akce-radku{grid-column:1/-1;display:flex;gap:.4rem}
-  .dp .akce-radku .btn{flex:1}
-  .dp-hlava{display:none}
-  .dp>label{display:none}
-  .dp .nazev-pole{grid-column:1/3}
-}
-@media (max-width:640px){
-  .uzivatel{display:none}
-  .taby{position:fixed;bottom:0;left:0;right:0;z-index:20;border-top:1px solid var(--linka);border-bottom:0;padding-bottom:env(safe-area-inset-bottom);overflow-x:auto}
-  .taby-in{padding:0}
-  .tab{flex:1;border-bottom:0;border-top:4px solid transparent;padding:.65rem .35rem;font-size:1rem}
-  .tab[aria-selected="true"]{border-top-color:var(--metr)}
-  .polozka{grid-template-columns:56px 1fr}
-  .obr{width:56px;height:56px}
-  .p-vpravo{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center;text-align:left}
-  .rada-doklad{grid-template-columns:1fr auto}
-  .rada-doklad .d-stav{display:none}
-  .rada-cenik{grid-template-columns:1fr auto}
-  .rada-cenik .c-typ{display:none}
-}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  @media (max-width:900px){
+    .hero-in{grid-template-columns:1fr;gap:44px;padding:56px 0 66px}
+    .feed-in{grid-template-columns:minmax(0,1fr);padding:40px 28px;gap:34px}
+    .grid{grid-template-columns:1fr 1fr}
+    .stats{grid-template-columns:1fr 1fr}
+    .nav-links{display:none}
+    .burger{display:block}
+    .nav-links.open{display:flex;position:absolute;top:70px;left:0;right:0;flex-direction:column;background:#fff;padding:18px 24px;gap:16px;box-shadow:var(--shadow-md);border-bottom:1px solid var(--line-2)}
+    .nav-cta{display:none}
+    .badge-float{display:none}
+  }
+  @media (max-width:560px){
+    .grid{grid-template-columns:1fr}
+    .stats{grid-template-columns:1fr 1fr}
+    .arrow{display:none}
+    .step{max-width:none}
+    section{padding:64px 0}
+  }
 </style>
 </head>
 <body>
 
-<!-- ================= PŘIHLÁŠENÍ ================= -->
-<section id="obr-prihlaseni" class="skryt">
-  <div class="vstup">
-    <div class="metr"><div class="znacka">YeY</div><div class="znacka-pod">Kancelář pro řemeslníky</div></div>
-    <form id="f-prihlaseni" novalidate>
-      <h2 id="p-titulek">Přihlášení</h2>
-      <div class="radek"><label for="p-email">E-mail</label>
-        <input id="p-email" class="pole" type="email" autocomplete="email" required></div>
-      <div class="radek" id="p-heslo-radek"><label for="p-heslo">Heslo</label>
-        <input id="p-heslo" class="pole" type="password" autocomplete="current-password" minlength="8" required>
-        <p class="napoveda skryt" id="p-heslo-napoveda">Aspoň 8 znaků.</p></div>
-      <button class="btn" id="p-tlacitko" type="submit">Přihlásit se</button>
-      <div class="hlaska" id="p-hlaska" role="status"></div>
-      <div class="prepinace">
-        <button type="button" class="odkaz" data-rezim="registrace" id="p-na-registraci">Vytvořit účet</button>
-        <button type="button" class="odkaz" data-rezim="zapomenute" id="p-na-zapomenute">Zapomenuté heslo</button>
-        <button type="button" class="odkaz skryt" data-rezim="prihlaseni" id="p-na-prihlaseni">Zpět na přihlášení</button>
-      </div>
-    </form>
+<!-- NAV -->
+<header class="nav">
+  <div class="wrap nav-in">
+    <a href="#" class="brand">
+      <svg class="logo" width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true">
+        <rect width="34" height="34" rx="9" fill="#15233c"/>
+        <path d="M11 9h9l4 4v12a1 1 0 0 1-1 1H11a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1Z" stroke="#c9a468" stroke-width="1.6"/>
+        <path d="M13.5 17.5l2.2 2.2 4.8-4.8" stroke="#c9a468" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      FakturaPRO
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#funkce">Funkce</a>
+      <a href="#propojeni">Jak to funguje</a>
+      <a href="#feed">Ceník &amp; feed</a>
+      <a href="#prokoho">Pro koho</a>
+    </nav>
+    <a href="#cta" class="btn primary nav-cta">Vyzkoušet</a>
+    <button class="burger" id="burger" aria-label="Menu"><span></span><span></span><span></span></button>
   </div>
-</section>
+</header>
 
-<!-- ================= NOVÉ HESLO ================= -->
-<section id="obr-heslo" class="skryt">
-  <div class="vstup">
-    <div class="metr"><div class="znacka">YeY</div><div class="znacka-pod">Kancelář pro řemeslníky</div></div>
-    <form id="f-heslo" novalidate>
-      <h2>Nastavit nové heslo</h2>
-      <div class="radek"><label for="n-heslo">Nové heslo</label>
-        <input id="n-heslo" class="pole" type="password" autocomplete="new-password" minlength="8" required>
-        <p class="napoveda">Aspoň 8 znaků.</p></div>
-      <button class="btn" type="submit">Uložit heslo</button>
-      <div class="hlaska" id="n-hlaska" role="status"></div>
-    </form>
-  </div>
-</section>
-
-<!-- ================= APLIKACE ================= -->
-<section id="obr-app" class="skryt">
-  <header class="hlavicka">
-    <div class="hlavicka-in">
-      <span class="znacka">YeY</span>
-      <span class="firma-nazev" id="h-firma">…</span>
-      <span class="uzivatel" id="h-uzivatel"></span>
-      <button class="btn btn-tichy" id="odhlasit">Odhlásit</button>
-    </div>
-  </header>
-
-  <nav class="taby" aria-label="Sekce">
-    <div class="taby-in" role="tablist">
-      <button class="tab" role="tab" data-tab="doklady" aria-selected="true">Doklady</button>
-      <button class="tab" role="tab" data-tab="katalog" aria-selected="false">Katalog</button>
-      <button class="tab" role="tab" data-tab="cenik" aria-selected="false">Ceník</button>
-      <button class="tab" role="tab" data-tab="kalkulacky" aria-selected="false">Kalkulačky</button>
-      <button class="tab" role="tab" data-tab="kontakty" aria-selected="false">Kontakty</button>
-      <button class="tab" role="tab" data-tab="firma" aria-selected="false">Firma</button>
-    </div>
-  </nav>
-
-  <main>
-    <!-- DOKLADY -->
-    <section id="v-doklady" class="skryt">
-      <div class="nastroje">
-        <input id="dk-filtr" class="pole" type="search" placeholder="Hledat podle čísla nebo odběratele" aria-label="Hledat doklad">
-        <span class="chipy" id="dk-typy" role="group" aria-label="Typ dokladu">
-          <button class="chip" type="button" data-typ="" aria-pressed="true">Vše</button>
-          <button class="chip" type="button" data-typ="nabidka" aria-pressed="false">Nabídky</button>
-          <button class="chip" type="button" data-typ="faktura" aria-pressed="false">Faktury</button>
-          <button class="chip" type="button" data-typ="smlouva" aria-pressed="false">Smlouvy</button>
-        </span>
-        <button class="btn btn-metr" id="dk-nova-nabidka">Nová nabídka</button>
-        <button class="btn" id="dk-nova-faktura">Nová faktura</button>
-        <button class="btn btn-tichy" id="dk-nova-smlouva">Nová smlouva o dílo</button>
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap hero-in">
+    <div class="hero-copy">
+      <span class="eyebrow light">★ TOP nástroj pro řemeslníky a podnikatele</span>
+      <h1>Nabídky, faktury a protokoly. <span class="hl">Všechno propojené.</span></h1>
+      <p class="lead">Jeden chytrý nástroj od poptávky až po předání díla. Bez měsíčních poplatků, funguje offline a data máte pořád u sebe.</p>
+      <div class="hero-cta">
+        <a href="#cta" class="btn primary lg">Vyzkoušet aplikaci</a>
+        <a href="#propojeni" class="btn ghost lg">Jak to funguje →</a>
       </div>
-      <div class="seznam" id="dk-seznam"><div class="prazdno">Načítám doklady…</div></div>
-    </section>
-
-    <!-- EDITOR DOKLADU -->
-    <section id="v-doklad" class="skryt">
-      <div class="lista">
-        <button class="btn btn-tichy" id="d-zpet">← Zpět</button>
-        <h1 id="d-nadpis">Doklad</h1>
-        <button class="btn btn-tichy" id="d-objednavka">Objednávkový list</button>
-        <button class="btn btn-tichy" id="d-na-smlouvu">Vytvořit smlouvu</button>
-        <button class="btn btn-tichy" id="d-na-fakturu">Vystavit fakturu</button>
-        <button class="btn btn-tichy" id="d-tisk">Tisk / PDF</button>
-        <button class="btn" id="d-ulozit">Uložit</button>
+      <div class="hero-trust">
+        <span><span class="tick">✓</span> Funguje offline</span>
+        <span><span class="tick">✓</span> QR platba na faktuře</span>
+        <span><span class="tick">✓</span> Bez cloudu a předplatného dat</span>
       </div>
+    </div>
 
-      <div class="karta">
-        <div class="mrizka">
-          <div class="radek" style="grid-column:1/-1">
-            <label for="d-kontakt">Odběratel</label>
-            <div style="display:flex;gap:.5rem">
-              <select id="d-kontakt" class="pole"></select>
-              <button class="btn btn-tichy" id="d-novy-kontakt" type="button">Nový</button>
+    <div class="mock">
+      <div class="badge-float bf-1"><span class="ic">⚡</span> Nabídka → faktura<br>jedním klikem</div>
+      <div class="badge-float bf-2"><span class="ic">📱</span> QR platba</div>
+      <div class="win">
+        <div class="win-bar"><i></i><i></i><i></i></div>
+        <div class="win-tabs"><span>Kontakty</span><span>Ceník</span><span>Nabídky</span><span class="on">Faktury</span><span>Protokoly</span></div>
+        <div class="doc">
+          <div class="doc-top">
+            <div class="doc-brand">
+              <div class="lg">VF</div>
+              <div><div class="doc-name">Vaše firma</div><div class="doc-sub">Instalace · montáže</div></div>
             </div>
+            <div><div class="doc-t1">Faktura</div><div class="doc-t2">2600042</div></div>
           </div>
-          <div class="radek"><label for="d-stav">Stav</label>
-            <select id="d-stav" class="pole">
-              <option value="koncept">Koncept</option><option value="odeslano">Odesláno</option>
-              <option value="prijato">Přijato</option><option value="zaplaceno">Zaplaceno</option>
-              <option value="stornovano">Stornováno</option>
-            </select></div>
-          <div class="radek"><label for="d-vystaveni">Datum vystavení</label><input id="d-vystaveni" class="pole" type="date"></div>
-          <div class="radek" data-jen-faktura><label for="d-splatnost">Splatnost</label><input id="d-splatnost" class="pole" type="date"></div>
-          <div class="radek" data-jen-faktura><label for="d-plneni">Datum plnění</label><input id="d-plneni" class="pole" type="date"></div>
-          <div class="radek" data-jen-faktura><label for="d-vs">Variabilní symbol</label><input id="d-vs" class="pole" inputmode="numeric"></div>
-          <div class="radek" data-jen-faktura><label for="d-platba">Způsob platby</label>
-            <select id="d-platba" class="pole"><option value="">–</option><option>Převodem</option><option>Hotově</option><option>Kartou</option></select></div>
-        </div>
-        <div class="radek"><label for="d-uvod">Předmět díla / úvodní text</label><textarea id="d-uvod" class="pole" rows="2" placeholder="Např. Rekonstrukce koupelny v bytě č. 4…"></textarea></div>
-
-        <div data-jen-smlouva class="skryt">
-          <div class="mrizka">
-            <div class="radek"><label for="d-misto">Místo plnění</label><input id="d-misto" class="pole" placeholder="Ulice, město"></div>
-            <div class="radek"><label for="d-od">Zahájení prací</label><input id="d-od" class="pole" type="date"></div>
-            <div class="radek"><label for="d-do">Dokončení díla</label><input id="d-do" class="pole" type="date"></div>
-            <div class="radek"><label for="d-zaruka">Záruka (měsíců)</label><input id="d-zaruka" class="pole" inputmode="numeric"></div>
-            <div class="radek"><label for="d-zaloha">Záloha (%)</label><input id="d-zaloha" class="pole" inputmode="decimal"></div>
-          </div>
-          <div class="radek">
-            <label for="d-text">Text smlouvy</label>
-            <textarea id="d-text" class="pole" rows="18" style="font-size:.92rem;line-height:1.55"></textarea>
-            <p class="napoveda">Text si můžeš libovolně přepsat. Tlačítko níže ho znovu sestaví ze zadaných údajů a přepíše tvoje úpravy.</p>
-            <div class="lista" style="margin-top:.5rem">
-              <button class="btn btn-tichy btn-maly" type="button" id="d-generovat">Sestavit text ze zadání</button>
-              <button class="btn btn-tichy btn-maly" type="button" id="d-vzor-ulozit">Uložit jako můj vzor</button>
-              <button class="btn btn-tichy btn-maly" type="button" id="d-vzor-nacist">Načíst můj vzor</button>
-              <button class="btn btn-tichy btn-maly" type="button" id="d-nahled-prep">Skrýt náhled</button>
-            </div>
-            <div class="nahled" id="d-nahled"></div>
-            <p class="napoveda">Žlutě jsou v náhledu hodnoty doplněné ze zadání. V tisku zvýrazněné nejsou.</p>
+          <table>
+            <thead><tr><th>Předmět</th><th class="r">Množ.</th><th class="r">Cena</th></tr></thead>
+            <tbody>
+              <tr><td class="cat">Práce</td><td class="r">1</td><td class="r">28 600</td></tr>
+              <tr><td class="cat">Materiál</td><td class="r">1</td><td class="r">32 600</td></tr>
+              <tr><td class="cat">Doprava</td><td class="r">1</td><td class="r">1 200</td></tr>
+            </tbody>
+          </table>
+          <div class="doc-bottom">
+            <div class="qr" aria-hidden="true"></div>
+            <div class="doc-total"><span class="lbl">Celkem k úhradě</span><b>62&nbsp;400 Kč</b></div>
           </div>
         </div>
       </div>
-
-      <div class="karta" style="padding:0;overflow:hidden">
-        <div class="dp dp-hlava"><span>Položka</span><span>MJ</span><span>Množství</span><span>Sleva %</span><span>DPH %</span><span class="vpravo">Cena bez DPH</span><span></span></div>
-        <div id="d-polozky"></div>
-        <div style="padding:.9rem 1rem;display:flex;gap:.6rem;flex-wrap:wrap;border-top:1px solid var(--linka)">
-          <button class="btn btn-metr btn-maly" id="d-z-ceniku">Z ceníku</button>
-          <button class="btn btn-metr btn-maly" id="d-z-katalogu">Z katalogu</button>
-          <button class="btn btn-tichy btn-maly" id="d-volna">Vlastní řádek</button>
-        </div>
-        <p class="napoveda chyba" id="d-varovani" style="padding:0 1rem"></p>
-        <div class="souhrn-doklad">
-          <div><small>Bez DPH</small><div class="cena" id="d-bez">0 Kč</div></div>
-          <div><small>DPH</small><div class="cena" id="d-dph">0 Kč</div></div>
-          <div><small>Celkem</small><div class="cena" id="d-celkem">0 Kč</div></div>
-        </div>
-      </div>
-
-      <div class="karta">
-        <label for="d-poznamka">Poznámka na doklad</label>
-        <textarea id="d-poznamka" class="pole" rows="2"></textarea>
-        <p class="napoveda" id="d-info"></p>
-        <button class="btn btn-pozor btn-maly" id="d-smazat" style="margin-top:.8rem">Smazat doklad</button>
-      </div>
-    </section>
-
-    <!-- KATALOG -->
-    <section id="v-katalog" class="skryt">
-      <div class="pas metr">
-        <div class="hledani"><input id="k-hledat" class="pole" type="search" placeholder="Hledat materiál, kód nebo EAN" autocomplete="off" aria-label="Hledat v katalogu"></div>
-        <div class="pas-info">
-          <label class="zatrzitko"><input type="checkbox" id="k-skladem"> Jen skladem</label>
-          <span style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
-            <span id="k-stav">Katalog se načítá…</span>
-            <button class="btn btn-tichy btn-maly" type="button" id="k-obnovit">Načíst ceny znovu</button>
-          </span>
-        </div>
-      </div>
-      <div class="seznam" id="k-seznam"><div class="prazdno">Katalog se načítá…</div></div>
-    </section>
-
-    <!-- CENÍK -->
-    <section id="v-cenik" class="skryt">
-      <div class="nastroje">
-        <input id="c-filtr" class="pole" type="search" placeholder="Filtrovat ceník" aria-label="Filtrovat ceník">
-        <label class="zatrzitko"><input type="checkbox" id="c-kontrola"> Jen ke kontrole</label>
-        <button class="btn btn-tichy" id="c-prepocet">Přepočítat podle katalogu</button>
-        <button class="btn btn-metr" id="c-pridat">Přidat položku</button>
-      </div>
-      <div class="seznam" id="c-seznam"><div class="prazdno">Načítám ceník…</div></div>
-    </section>
-
-    <!-- KALKULAČKY -->
-    <section id="v-kalkulacky" class="skryt">
-      <div class="karta">
-        <h2>Spotřeba materiálu</h2>
-        <div class="chipy" id="kl-druhy"></div>
-
-        <div class="lista" style="margin:.9rem 0 0">
-          <span class="chipy" id="kl-rezim">
-            <button class="chip" type="button" data-rezim="laik" aria-pressed="true">Jednoduše</button>
-            <button class="chip" type="button" data-rezim="profi" aria-pressed="false">Podrobně</button>
-          </span>
-          <button class="btn btn-tichy btn-maly" type="button" id="kl-tipy">Zobrazit nápovědu</button>
-          <button class="btn btn-tichy btn-maly" type="button" id="kl-jak-prep">Jak počítám</button>
-        </div>
-
-        <p class="napoveda" id="kl-popis" style="margin-top:.6rem"></p>
-        <div class="chipy" id="kl-sablony" style="margin-top:.7rem"></div>
-        <div class="schema" id="kl-schema"></div>
-        <div id="kl-vstupy"></div>
-
-        <div id="kl-otvory-blok" class="skryt" style="margin-top:.4rem">
-          <label>Otvory k odečtení (dveře, okna)</label>
-          <div id="kl-otvory"></div>
-          <div class="chipy" style="margin-top:.4rem">
-            <button class="chip" type="button" data-otvor="0.9,2.0">+ Dveře 90 × 200</button>
-            <button class="chip" type="button" data-otvor="0.8,2.0">+ Dveře 80 × 200</button>
-            <button class="chip" type="button" data-otvor="1.5,1.5">+ Okno 150 × 150</button>
-            <button class="chip" type="button" data-otvor="1,1">+ Vlastní</button>
-          </div>
-        </div>
-
-        <div class="jak skryt" id="kl-jak"></div>
-      </div>
-
-      <div class="kalk-vysledek" id="kl-vysledek"><div class="prazdno">Vyplň rozměry a spočítám množství.</div></div>
-      <div class="lista">
-        <button class="btn btn-metr" id="kl-do-nabidky">Vložit do nabídky</button>
-        <button class="btn btn-tichy" id="kl-vycistit">Vyčistit</button>
-      </div>
-    </section>
-
-    <!-- KONTAKTY -->
-    <section id="v-kontakty" class="skryt">
-      <div class="nastroje">
-        <input id="ko-filtr" class="pole" type="search" placeholder="Hledat odběratele" aria-label="Hledat kontakt">
-        <button class="btn btn-metr" id="ko-pridat">Nový kontakt</button>
-      </div>
-      <div class="seznam" id="ko-seznam"><div class="prazdno">Načítám kontakty…</div></div>
-    </section>
-
-    <!-- FIRMA -->
-    <section id="v-firma" class="skryt">
-      <form class="formular" id="f-firma">
-        <h2>Údaje firmy</h2>
-        <div class="radek"><label for="f-nazev">Název nebo jméno</label><input id="f-nazev" class="pole" required></div>
-        <div class="mrizka">
-          <div class="radek"><label for="f-ico">IČO</label>
-            <div style="display:flex;gap:.5rem">
-              <input id="f-ico" class="pole" inputmode="numeric" maxlength="8">
-              <button class="btn btn-tichy" type="button" id="f-ares" title="Doplnit údaje z ARES">ARES</button>
-            </div></div>
-          <div class="radek"><label for="f-dic">DIČ</label><input id="f-dic" class="pole" maxlength="14"></div>
-        </div>
-        <div class="radek"><label for="f-adresa">Adresa</label><input id="f-adresa" class="pole" placeholder="Ulice, město, PSČ"></div>
-        <div class="mrizka">
-          <div class="radek"><label for="f-telefon">Telefon</label><input id="f-telefon" class="pole"></div>
-          <div class="radek"><label for="f-ucet">Číslo účtu</label><input id="f-ucet" class="pole" placeholder="123456789/0100"></div>
-        </div>
-        <div class="radek"><label class="zatrzitko"><input type="checkbox" id="f-platce"> Jsem plátce DPH</label></div>
-        <button class="btn" type="submit" id="f-ulozit">Uložit údaje</button>
-        <p class="napoveda" id="f-napoveda">Adresa, telefon a účet se tisknou na doklady.</p>
-      </form>
-    </section>
-  </main>
+    </div>
+  </div>
 </section>
 
-<!-- ================= DIALOG: POLOŽKA CENÍKU ================= -->
-<dialog id="dlg-cenik">
-  <form id="f-polozka" method="dialog" novalidate>
-    <div class="metr dlg-hlava">
-      <button type="button" class="dlg-zavrit" aria-label="Zavřít" data-zavrit>×</button>
-      <h2 id="cd-titulek">Položka ceníku</h2>
+<!-- FEATURES -->
+<section id="funkce">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Co všechno umí</span>
+      <h2>Celá zakázka v jednom nástroji</h2>
+      <p>Od prvního kontaktu se zákazníkem až po předávací protokol. Žádné přepisování mezi Wordem, Excelem a e-mailem.</p>
     </div>
-    <div class="dlg-telo">
-      <input type="hidden" id="cd-id"><input type="hidden" id="cd-katalog">
-      <div class="radek"><label for="cd-nazev">Název</label><input id="cd-nazev" class="pole" required></div>
-      <div class="mrizka">
-        <div class="radek"><label for="cd-typ">Typ</label>
-          <select id="cd-typ" class="pole"><option value="material">Materiál</option><option value="prace">Práce</option><option value="ostatni">Ostatní</option></select></div>
-        <div class="radek"><label for="cd-mj">Jednotka</label><input id="cd-mj" class="pole" placeholder="ks, m², hod"></div>
-        <div class="radek"><label for="cd-dph">Sazba DPH %</label>
-          <select id="cd-dph" class="pole"><option value="21">21</option><option value="12">12</option><option value="0">0</option></select></div>
+    <div class="grid">
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+        <h3>Kontakty s ARES</h3>
+        <p>Zadáte IČO a název, adresa i DIČ se doplní z rejstříku samy. Zákazníky máte přehledně na jednom místě.</p>
       </div>
-      <div class="mrizka">
-        <div class="radek"><label for="cd-nakup">Nákup bez DPH</label><input id="cd-nakup" class="pole" inputmode="decimal"></div>
-        <div class="radek"><label for="cd-prirazka">Přirážka %</label><input id="cd-prirazka" class="pole" inputmode="decimal"></div>
-        <div class="radek"><label for="cd-prodej">Prodej bez DPH</label><input id="cd-prodej" class="pole" inputmode="decimal"></div>
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="7" cy="6" r="1.4" fill="currentColor"/><circle cx="11" cy="12" r="1.4" fill="currentColor"/><circle cx="9" cy="18" r="1.4" fill="currentColor"/></svg></div>
+        <h3>Chytrý ceník</h3>
+        <p>Vlastní kategorie, hlídání cen a import z Excelu — stovky položek naráz. Kategorie se při importu vytvoří samy.</p>
       </div>
-      <p class="napoveda skryt" id="cd-napoveda">Nákup je předvyplněný z ceny s DPH v katalogu. Přepiš ho na svou skutečnou nákupní cenu.</p>
-      <p class="napoveda skryt" id="cd-katalog-info"></p>
-      <button type="button" class="btn btn-tichy btn-maly skryt" id="cd-prevzit" style="margin-bottom:.8rem">Převzít nákupní cenu z katalogu</button>
-      <div class="souhrn"><span>Prodej s DPH</span><span class="cena" id="cd-sdph">–</span></div>
-      <div class="radek"><label for="cd-poznamka">Poznámka</label><textarea id="cd-poznamka" class="pole" rows="2"></textarea></div>
-      <div class="dlg-pata">
-        <button type="button" class="btn btn-pozor skryt" id="cd-smazat">Smazat</button>
-        <span class="konec">
-          <button type="button" class="btn btn-tichy" data-zavrit>Zrušit</button>
-          <button type="submit" class="btn" id="cd-ulozit">Uložit</button>
-        </span>
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg></div>
+        <h3>Nabídky</h3>
+        <p>Položky přehledně po kategoriích s mezisoučty. Vložíte je i rovnou z tabulky. Zákazník dostane profesionální nabídku.</p>
       </div>
-    </div>
-  </form>
-</dialog>
-
-<!-- ================= DIALOG: KONTAKT ================= -->
-<dialog id="dlg-kontakt">
-  <form id="f-kontakt" method="dialog" novalidate>
-    <div class="metr dlg-hlava">
-      <button type="button" class="dlg-zavrit" aria-label="Zavřít" data-zavrit>×</button>
-      <h2 id="kd-titulek">Kontakt</h2>
-    </div>
-    <div class="dlg-telo">
-      <input type="hidden" id="kd-id">
-      <div class="radek"><label for="kd-nazev">Jméno nebo firma</label><input id="kd-nazev" class="pole" required></div>
-      <div class="mrizka">
-        <div class="radek"><label for="kd-ico">IČO</label>
-          <div style="display:flex;gap:.5rem">
-            <input id="kd-ico" class="pole" inputmode="numeric" maxlength="8">
-            <button class="btn btn-tichy" type="button" id="kd-ares" title="Doplnit údaje z ARES">ARES</button>
-          </div></div>
-        <div class="radek"><label for="kd-dic">DIČ</label><input id="kd-dic" class="pole" maxlength="14"></div>
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M8 15h4"/></svg></div>
+        <h3>Faktury s QR platbou</h3>
+        <p>Běžná faktura, neplátce i přenesená daňová povinnost (§92e). QR kód pro platbu se vygeneruje automaticky.</p>
       </div>
-      <div class="radek"><label for="kd-ulice">Ulice</label><input id="kd-ulice" class="pole"></div>
-      <div class="mrizka">
-        <div class="radek"><label for="kd-mesto">Město</label><input id="kd-mesto" class="pole"></div>
-        <div class="radek"><label for="kd-psc">PSČ</label><input id="kd-psc" class="pole" inputmode="numeric"></div>
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <h3>Předávací protokoly</h3>
+        <p>Z faktury vytvoříte protokol o předání díla jedním kliknutím. Ideální k převzetí zakázky zákazníkem.</p>
       </div>
-      <div class="mrizka">
-        <div class="radek"><label for="kd-email">E-mail</label><input id="kd-email" class="pole" type="email"></div>
-        <div class="radek"><label for="kd-telefon">Telefon</label><input id="kd-telefon" class="pole"></div>
+      <div class="card reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18M3 12h18"/></svg></div>
+        <h3>Vaše značka</h3>
+        <p>Vlastní logo, barvy, písmo i text u loga. Nástroj sladíte se svou firmou — ne naopak.</p>
       </div>
-      <div class="radek"><label for="kd-poznamka">Poznámka</label><textarea id="kd-poznamka" class="pole" rows="2"></textarea></div>
-      <div class="dlg-pata">
-        <button type="button" class="btn btn-pozor skryt" id="kd-smazat">Smazat</button>
-        <span class="konec">
-          <button type="button" class="btn btn-tichy" data-zavrit>Zrušit</button>
-          <button type="submit" class="btn">Uložit</button>
-        </span>
-      </div>
-    </div>
-  </form>
-</dialog>
-
-<!-- ================= DIALOG: VÝBĚR POLOŽKY DO DOKLADU ================= -->
-<dialog id="dlg-vyber">
-  <div class="metr dlg-hlava">
-    <button type="button" class="dlg-zavrit" aria-label="Zavřít" data-zavrit>×</button>
-    <h2 id="vd-titulek">Vybrat položku</h2>
-    <div class="chipy" id="vd-zdroje" style="margin-top:.5rem">
-      <button class="chip" type="button" data-zdroj="cenik" aria-pressed="true">Z ceníku</button>
-      <button class="chip" type="button" data-zdroj="katalog" aria-pressed="false">Z katalogu</button>
     </div>
   </div>
-  <div class="dlg-telo">
-    <input id="vd-hledat" class="pole" type="search" placeholder="Hledat" style="margin-bottom:.8rem">
-    <div class="seznam" id="vd-seznam"><div class="prazdno">Napiš, co hledáš.</div></div>
-  </div>
-</dialog>
+</section>
 
-<div id="toast" class="skryt" role="status" aria-live="polite"></div>
-<div id="tisk"></div>
+<!-- PROPOJENÍ / FLOW -->
+<section id="propojeni" class="flow-sec">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Provázané funkce</span>
+      <h2>Jednou zadáte, dál to jede samo</h2>
+      <p>Data si funkce předávají mezi sebou. Z kontaktu vznikne nabídka, z nabídky faktura, z faktury protokol — a nic nepřepisujete.</p>
+    </div>
+    <div class="flow reveal">
+      <div class="step">
+        <div class="n">1</div>
+        <h3>Kontakt</h3>
+        <p>Zákazník podle IČO z rejstříku ARES.</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="n">2</div>
+        <h3>Nabídka</h3>
+        <p>Položky z ceníku po kategoriích s mezisoučty.</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="n">3</div>
+        <h3>Faktura</h3>
+        <p>Jedním klikem z nabídky. QR platba, správné DPH.</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="n">4</div>
+        <h3>Protokol</h3>
+        <p>Předání díla z hotové faktury.</p>
+      </div>
+    </div>
+    <p class="flow-note reveal">Celá cesta od poptávky k předání — <b>na pár kliknutí</b>, bez ručního opisování.</p>
+  </div>
+</section>
+
+<!-- STATS -->
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="stats reveal">
+      <div class="stat"><div class="num">5 000+</div><div class="lbl">položek ve stavebním feedu</div></div>
+      <div class="stat"><div class="num">1 klik</div><div class="lbl">z nabídky na fakturu</div></div>
+      <div class="stat"><div class="num">0 Kč</div><div class="lbl">měsíčně za data</div></div>
+      <div class="stat"><div class="num">100%</div><div class="lbl">offline a u vás</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FEED -->
+<section id="feed">
+  <div class="wrap">
+    <div class="feed reveal">
+      <div class="feed-in">
+        <div>
+          <span class="eyebrow light">Rozšíření ceníku</span>
+          <div class="big">5 000+</div>
+          <h2 style="margin-top:6px">stavebních položek<br>přímo k poptání</h2>
+          <p class="lead">Připojte XML feed a získáte tisíce položek s cenami rovnou do ceníku. Vyhledáte, vložíte do nabídky nebo faktury — a můžete je <b style="color:#fff">rovnou poptat u dodavatele</b>.</p>
+          <ul>
+            <li><span class="tick">✓</span> Aktuální ceny bez ručního přepisování</li>
+            <li><span class="tick">✓</span> Vyhledání a vložení do dokladu na pár kliků</li>
+            <li><span class="tick">✓</span> Poptávka k dodavateli přímo z aplikace</li>
+          </ul>
+          <span class="tag">Zatím stavební obor — další obory připravujeme</span>
+        </div>
+        <div class="feed-card" aria-hidden="true">
+          <div class="feed-row"><div class="pic">🧱</div><div class="t"><b>Ytong přesná tvárnice 150</b><span>skladem · ks</span></div><div class="pr">89 Kč</div><button class="add">Poptat</button></div>
+          <div class="feed-row"><div class="pic">🔩</div><div class="t"><b>Sádrokarton RB 12,5 mm</b><span>skladem · m²</span></div><div class="pr">129 Kč</div><button class="add">Poptat</button></div>
+          <div class="feed-row"><div class="pic">🪵</div><div class="t"><b>OSB 3 deska 18 mm</b><span>skladem · m²</span></div><div class="pr">315 Kč</div><button class="add">Poptat</button></div>
+          <div class="feed-row"><div class="pic">🧰</div><div class="t"><b>Lepidlo flexibilní C2TE 25 kg</b><span>skladem · pytel</span></div><div class="pr">349 Kč</div><button class="add">Poptat</button></div>
+          <div class="feed-row"><div class="pic">🚿</div><div class="t"><b>PPR trubka 32×5,4</b><span>skladem · m</span></div><div class="pr">85 Kč</div><button class="add">Poptat</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SIMPLICITY -->
+<section style="background:linear-gradient(180deg,#fff,var(--cream))">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Jednoduše</span>
+      <h2>Zvládne to každý — za pár minut</h2>
+      <p>Žádné instalace, žádné školení. Otevřete v prohlížeči a rovnou fakturujete.</p>
+    </div>
+    <div class="grid">
+      <div class="card reveal" style="text-align:center">
+        <div class="ic" style="margin:0 auto 16px">📂</div>
+        <h3>1 · Otevřete</h3>
+        <p>Spustíte jeden soubor v prohlížeči a připojíte pracovní složku (klidně v OneDrivu).</p>
+      </div>
+      <div class="card reveal" style="text-align:center">
+        <div class="ic" style="margin:0 auto 16px">✍️</div>
+        <h3>2 · Vyplníte</h3>
+        <p>Vyberete zákazníka a položky z ceníku. Součty i DPH se spočítají samy.</p>
+      </div>
+      <div class="card reveal" style="text-align:center">
+        <div class="ic" style="margin:0 auto 16px">🖨️</div>
+        <h3>3 · Odešlete</h3>
+        <p>Vytisknete do PDF nebo pošlete. Data se ukládají průběžně a nikdy se neztratí.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AUDIENCE -->
+<section id="prokoho">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Pro koho</span>
+      <h2>Dělané pro řemeslníky a živnostníky</h2>
+      <p>Ať děláte cokoli — nástroj si přizpůsobíte svému oboru, kategoriím i ceníku.</p>
+    </div>
+    <div class="chips reveal">
+      <span class="chip"><span class="d">●</span>Instalatéři</span>
+      <span class="chip"><span class="d">●</span>Topenáři</span>
+      <span class="chip"><span class="d">●</span>Plynaři</span>
+      <span class="chip"><span class="d">●</span>Elektrikáři</span>
+      <span class="chip"><span class="d">●</span>Zedníci</span>
+      <span class="chip"><span class="d">●</span>Obkladači</span>
+      <span class="chip"><span class="d">●</span>Podlaháři</span>
+      <span class="chip"><span class="d">●</span>Malíři</span>
+      <span class="chip"><span class="d">●</span>Truhláři</span>
+      <span class="chip"><span class="d">●</span>Stavební firmy</span>
+      <span class="chip"><span class="d">●</span>…a další podnikatelé</span>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="wrap">
+    <div class="cta reveal">
+      <h2>Začněte fakturovat chytře</h2>
+      <p>Vyzkoušejte nástroj, který spojí nabídky, faktury i protokoly do jednoho a ušetří vám hodiny administrativy každý týden.</p>
+      <a href="#" class="btn primary lg">Chci vyzkoušet FakturaPRO</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap foot-in">
+    <div class="foot-brand">
+      <svg width="30" height="30" viewBox="0 0 34 34" fill="none" aria-hidden="true">
+        <rect width="34" height="34" rx="9" fill="#1e3357"/>
+        <path d="M11 9h9l4 4v12a1 1 0 0 1-1 1H11a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1Z" stroke="#c9a468" stroke-width="1.6"/>
+        <path d="M13.5 17.5l2.2 2.2 4.8-4.8" stroke="#c9a468" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      FakturaPRO
+    </div>
+    <div class="small">© <span id="year"></span> FakturaPRO · Nabídky, faktury a protokoly pro řemeslníky · <a href="#funkce">Funkce</a> · <a href="#feed">Ceník &amp; feed</a></div>
+  </div>
+</footer>
 
 <script>
-/* ================= NASTAVENÍ ================= */
-const SUPABASE_URL = 'https://hkzhjoveiqadezmvksdz.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_WUy9urfE9n5O2SelitV6FA_mhzCUrM_';   // veřejný klíč – smí být v kódu
-const APP_URL = location.origin + location.pathname;
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-/* ================= POMOCNÉ ================= */
-const $ = (s, r = document) => r.querySelector(s);
-const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const cislo = v => { const n = parseFloat(String(v ?? '').replace(/\s/g, '').replace(',', '.')); return Number.isFinite(n) ? n : null; };
-const zaokr = n => Math.round(n * 100) / 100;
-const kc = n => (n == null || !Number.isFinite(Number(n))) ? '–'
-  : Number(n).toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Kč';
-const vPole = n => (n == null || !Number.isFinite(Number(n))) ? '' : String(zaokr(Number(n))).replace('.', ',');
-const ks = n => Number(n).toLocaleString('cs-CZ', { maximumFractionDigits: 2 });
-const httpsUrl = u => /^https:\/\//i.test(u || '') ? u : '';
-/** Text bez diakritiky a malými písmeny – aby „sádrokarton“ našel „SADROKARTON“. */
-const bezDia = t => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-const dnes = () => new Date().toISOString().slice(0, 10);
-const plusDni = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
-const datum = d => d ? new Date(d).toLocaleDateString('cs-CZ') : '';
-const TYPY = { material: 'Materiál', prace: 'Práce', ostatni: 'Ostatní' };
-const STAVY = { koncept: 'Koncept', odeslano: 'Odesláno', prijato: 'Přijato', zaplaceno: 'Zaplaceno', stornovano: 'Stornováno' };
-
-const pamet = {
-  cti(k, v) { try { const x = localStorage.getItem('yey:' + k); return x == null ? v : x; } catch (e) { return v; } },
-  pis(k, v) { try { localStorage.setItem('yey:' + k, v); } catch (e) {} }
-};
-
-let toastCas;
-function toast(text, chyba = false) {
-  const t = $('#toast');
-  t.textContent = text; t.classList.toggle('chyba', chyba); t.classList.remove('skryt');
-  clearTimeout(toastCas);
-  toastCas = setTimeout(() => t.classList.add('skryt'), chyba ? 6000 : 3000);
-}
-
-function prelozChybu(e) {
-  const m = String(e?.message || e || '');
-  if (/Invalid login credentials/i.test(m)) return 'Špatný e-mail nebo heslo.';
-  if (/Email not confirmed/i.test(m)) return 'E-mail ještě není potvrzený. Klikni na odkaz, který ti přišel.';
-  if (/already registered/i.test(m)) return 'Účet s tímto e-mailem už existuje.';
-  if (/rate limit|too many/i.test(m)) return 'Příliš mnoho pokusů. Zkus to za pár minut.';
-  if (/Password should be at least|at least \d+ characters/i.test(m)) return 'Heslo musí mít aspoň 8 znaků.';
-  if (/Failed to fetch|NetworkError/i.test(m)) return 'Nepodařilo se spojit se serverem. Zkontroluj připojení.';
-  return m || 'Něco se nepovedlo.';
-}
-
-/* ================= STAV ================= */
-const stav = {
-  user: null, firma: null, role: null,
-  katalog: [], cenik: [], kontakty: [], doklady: [],
-  doklad: null, polozky: [], katalogCeny: {}, posledniCeny: {},
-  obnovaHesla: false, rezim: 'prihlaseni', predchoziTab: 'doklady'
-};
-
-function ukaz(obr) { ['prihlaseni', 'heslo', 'app'].forEach(o => $('#obr-' + o).classList.toggle('skryt', o !== obr)); }
-
-/* ================= PŘIHLÁŠENÍ ================= */
-function nastavRezim(r) {
-  stav.rezim = r;
-  const reg = r === 'registrace', zap = r === 'zapomenute';
-  $('#p-titulek').textContent = reg ? 'Nový účet' : zap ? 'Obnova hesla' : 'Přihlášení';
-  $('#p-tlacitko').textContent = reg ? 'Vytvořit účet' : zap ? 'Poslat odkaz na obnovu' : 'Přihlásit se';
-  $('#p-heslo-radek').classList.toggle('skryt', zap);
-  $('#p-heslo-napoveda').classList.toggle('skryt', !reg);
-  $('#p-heslo').autocomplete = reg ? 'new-password' : 'current-password';
-  $('#p-na-registraci').classList.toggle('skryt', r !== 'prihlaseni');
-  $('#p-na-zapomenute').classList.toggle('skryt', r !== 'prihlaseni');
-  $('#p-na-prihlaseni').classList.toggle('skryt', r === 'prihlaseni');
-  $('#p-hlaska').textContent = ''; $('#p-hlaska').className = 'hlaska';
-}
-$$('[data-rezim]').forEach(b => b.addEventListener('click', () => nastavRezim(b.dataset.rezim)));
-const hlaska = (el, text, chyba = false) => { el.textContent = text; el.className = 'hlaska' + (chyba ? ' chyba' : ''); };
-
-$('#f-prihlaseni').addEventListener('submit', async e => {
-  e.preventDefault();
-  const email = $('#p-email').value.trim(), heslo = $('#p-heslo').value, h = $('#p-hlaska'), btn = $('#p-tlacitko');
-  if (!/^\S+@\S+\.\S+$/.test(email)) return hlaska(h, 'Zadej platný e-mail.', true);
-  if (stav.rezim !== 'zapomenute' && heslo.length < (stav.rezim === 'registrace' ? 8 : 1))
-    return hlaska(h, stav.rezim === 'registrace' ? 'Heslo musí mít aspoň 8 znaků.' : 'Zadej heslo.', true);
-  btn.disabled = true;
-  try {
-    if (stav.rezim === 'prihlaseni') {
-      const { error } = await sb.auth.signInWithPassword({ email, password: heslo }); if (error) throw error;
-    } else if (stav.rezim === 'registrace') {
-      const { data, error } = await sb.auth.signUp({ email, password: heslo, options: { emailRedirectTo: APP_URL } });
-      if (error) throw error;
-      if (!data.session) hlaska(h, 'Hotovo. Na ' + email + ' jsme poslali odkaz pro potvrzení účtu.');
-    } else {
-      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: APP_URL }); if (error) throw error;
-      hlaska(h, 'Pokud účet existuje, přišel ti e-mail s odkazem na nové heslo.');
-    }
-  } catch (err) { hlaska(h, prelozChybu(err), true); } finally { btn.disabled = false; }
-});
-
-$('#f-heslo').addEventListener('submit', async e => {
-  e.preventDefault();
-  const heslo = $('#n-heslo').value, h = $('#n-hlaska');
-  if (heslo.length < 8) return hlaska(h, 'Heslo musí mít aspoň 8 znaků.', true);
-  const { data, error } = await sb.auth.updateUser({ password: heslo });
-  if (error) return hlaska(h, prelozChybu(error), true);
-  stav.obnovaHesla = false; history.replaceState(null, '', APP_URL);
-  toast('Heslo je změněné.'); start(data.user);
-});
-
-$('#odhlasit').addEventListener('click', () => sb.auth.signOut());
-
-sb.auth.onAuthStateChange((udalost, session) => {
-  setTimeout(() => {
-    if (udalost === 'PASSWORD_RECOVERY') { stav.obnovaHesla = true; ukaz('heslo'); return; }
-    if (stav.obnovaHesla) return;
-    if (!session) { stav.user = null; stav.firma = null; nastavRezim('prihlaseni'); ukaz('prihlaseni'); return; }
-    if (udalost === 'INITIAL_SESSION' || udalost === 'SIGNED_IN') start(session.user);
-  }, 0);
-});
-
-/* ================= START ================= */
-async function start(user) {
-  if (stav.user && stav.user.id === user.id) return;
-  stav.user = user; ukaz('app'); $('#h-uzivatel').textContent = user.email;
-  if (location.hash) history.replaceState(null, '', APP_URL);
-
-  const { data, error } = await sb.from('clenove')
-    .select('role, firma:firmy(id, nazev, ico, dic, platce_dph, tarif, adresa, telefon, ucet, sablona_smlouvy)')
-    .eq('user_id', user.id).limit(1).maybeSingle();
-  if (error || !data?.firma) {
-    toast(error ? 'Firmu se nepodařilo načíst: ' + prelozChybu(error) : 'K účtu není přiřazená žádná firma.', true);
-    return;
-  }
-  stav.firma = data.firma; stav.role = data.role;
-  vykresliFirmu(); nactiStavKatalogu();
-  await Promise.all([nactiCenik(), nactiKontakty(), nactiDoklady()]);
-  prepniTab('doklady');
-}
-
-/* ================= TABY ================= */
-function prepniTab(tab) {
-  $$('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
-  ['doklady', 'doklad', 'katalog', 'cenik', 'kalkulacky', 'kontakty', 'firma'].forEach(t => $('#v-' + t).classList.toggle('skryt', t !== tab));
-  if (tab !== 'doklad') stav.predchoziTab = tab;
-  if (tab === 'katalog') $('#k-hledat').focus({ preventScroll: true });
-  window.scrollTo(0, 0);
-}
-$$('.tab').forEach(b => b.addEventListener('click', () => prepniTab(b.dataset.tab)));
-
-/* ================= FIRMA ================= */
-function vykresliFirmu() {
-  const f = stav.firma;
-  $('#h-firma').textContent = f.nazev;
-  $('#f-nazev').value = f.nazev || ''; $('#f-ico').value = f.ico || ''; $('#f-dic').value = f.dic || '';
-  $('#f-platce').checked = !!f.platce_dph;
-  $('#f-adresa').value = f.adresa || ''; $('#f-telefon').value = f.telefon || ''; $('#f-ucet').value = f.ucet || '';
-  const vlastnik = stav.role === 'vlastnik';
-  $$('#f-firma input, #f-firma button').forEach(x => { x.disabled = !vlastnik; });
-}
-
-$('#f-firma').addEventListener('submit', async e => {
-  e.preventDefault();
-  const nazev = $('#f-nazev').value.trim(), ico = $('#f-ico').value.replace(/\s/g, '');
-  if (!nazev) return toast('Doplň název firmy.', true);
-  if (ico && !/^\d{8}$/.test(ico)) return toast('IČO má 8 číslic.', true);
-  $('#f-ulozit').disabled = true;
-  const { data, error } = await sb.from('firmy').update({
-    nazev, ico: ico || null,
-    dic: $('#f-dic').value.replace(/\s/g, '').toUpperCase() || null,
-    platce_dph: $('#f-platce').checked,
-    adresa: $('#f-adresa').value.trim() || null,
-    telefon: $('#f-telefon').value.trim() || null,
-    ucet: $('#f-ucet').value.trim() || null
-  }).eq('id', stav.firma.id).select().maybeSingle();
-  $('#f-ulozit').disabled = false;
-  if (error || !data) return toast('Uložení selhalo: ' + prelozChybu(error || 'nemáš oprávnění'), true);
-  stav.firma = { ...stav.firma, ...data }; vykresliFirmu(); toast('Údaje firmy uloženy.');
-});
-
-/* ================= KATALOG ================= */
-function uvodKatalogu(pocet) {
-  return `<div class="prazdno" style="text-align:left;padding:1.4rem 1.2rem">
-    <p style="margin-top:0"><strong>${pocet != null ? ks(pocet) + ' položek' : 'Katalog'}</strong> od dodavatele STAVIMEX, připravených k vložení do nabídky.
-    Začni psát název, kód nebo EAN – třeba „ytong 60x25“, „sádrokarton“ nebo „cw 75“.</p>
-    <p><strong>Odkud se ceny berou:</strong> dodavatel každou noc vyexportuje svůj ceník a skladové zásoby.
-    Aplikace si je sama načte ráno, takže vidíš ceny a dostupnost z posledního exportu.
-    Tlačítkem „Načíst ceny znovu“ si je stáhneš kdykoli během dne.</p>
-    <p><strong>Jak to spolu souvisí:</strong> z katalogu si položku uložíš do svého <em>ceníku</em>, kde si nastavíš přirážku.
-    Ceník pak plní <em>nabídky, smlouvy a faktury</em> a <em>kalkulačky</em> z něj berou ceny materiálu.
-    Když se u dodavatele změní nákupní cena, ceník tě na to upozorní a tlačítkem ho přepočítáš.</p>
-    <p style="margin-bottom:0"><strong>Ceny na hotových dokladech se nikdy nemění.</strong> Do dokladu se opíšou v okamžiku vystavení,
-    takže noční import ti nepřepíše to, co už má zákazník v ruce.</p>
-  </div>`;
-}
-
-async function nactiStavKatalogu() {
-  const { data } = await sb.from('dodavatele').select('nazev, posledni_import').eq('aktivni', true);
-  const d = (data || []).filter(x => x.posledni_import).sort((a, b) => b.posledni_import.localeCompare(a.posledni_import))[0];
-  $('#k-stav').textContent = d
-    ? 'Ceny a zásoby ' + d.nazev + ' k ' + new Date(d.posledni_import).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })
-    : 'Katalog zatím nemá data.';
-
-  const { count } = await sb.from('katalog').select('id', { count: 'exact', head: true }).eq('aktivni', true);
-  stav.pocetKatalog = count ?? null;
-  if ($('#k-hledat').value.trim().length < 2) $('#k-seznam').innerHTML = uvodKatalogu(stav.pocetKatalog);
-}
-
-let sloupecHledani = 'nazev_hled';   // spadne na 'nazev', když sloupec v databázi ještě není
-
-async function hledejKatalog(dotazText, limit = 60) {
-  const q = String(dotazText || '').replace(/[%,()*\\"]/g, ' ').replace(/\s+/g, ' ').trim();
-  if (q.length < 2) return [];
-
-  const dotaz = () => {
-    let d = sb.from('katalog')
-      .select('id, kod, ean, nazev, mj, rozmer, pocet_na_palete, hmotnost_mj, cena_s_dph, sazba_dph, zasoby, url_produktu, url_obrazku')
-      .order('nazev').limit(limit);
-    if (/^\d{3,}$/.test(q)) {
-      d = d.or(`kod.eq.${q},ean.eq.${q},${sloupecHledani}.ilike.%${bezDia(q)}%`);
-    } else {
-      bezDia(q).split(' ').slice(0, 6).forEach(w => { d = d.ilike(sloupecHledani, `%${w}%`); });
-    }
-    return d;
-  };
-
-  let { data, error } = await dotaz();
-  if (error && sloupecHledani === 'nazev_hled' && /nazev_hled/.test(String(error.message || ''))) {
-    sloupecHledani = 'nazev';               // databáze ještě nemá vyhledávací sloupec
-    ({ data, error } = await dotaz());
-  }
-  if (error) { toast('Hledání selhalo: ' + prelozChybu(error), true); return []; }
-  return data || [];
-}
-
-/** Ruční načtení cen z feedu. Funkce si sama hlídá, aby nestahovala pořád dokola. */
-async function obnovKatalog(tlacitko) {
-  const puvodni = tlacitko.textContent;
-  tlacitko.disabled = true; tlacitko.textContent = 'Načítám…';
-  const { data, error } = await sb.functions.invoke('import-feed', { body: {} });
-  tlacitko.disabled = false; tlacitko.textContent = puvodni;
-  if (error || data?.chyba) { toast('Načtení selhalo: ' + (data?.chyba || prelozChybu(error)), true); return false; }
-  stav.katalogCeny = {};
-  await nactiStavKatalogu();
-  await nactiCenik();
-  if ($('#k-hledat').value.trim().length >= 2) hledej();
-  toast(data.preskoceno ? data.zprava : `Načteno ${ks(data.importovano)} položek z ceníku dodavatele.`);
-  return true;
-}
-$('#k-obnovit').addEventListener('click', e => obnovKatalog(e.target));
-
-/** Hromadný přepočet ceníku: převezme dnešní nákupní ceny a drží tvou přirážku. */
-$('#c-prepocet').addEventListener('click', async e => {
-  const kandidati = stav.cenik.filter(c => {
-    const d = nakupDnes(c.katalog_id);
-    return d != null && c.nakupni_bez_dph != null && zaokr(c.nakupni_bez_dph) !== d;
-  });
-  if (!kandidati.length) return toast('Ceník odpovídá katalogu, není co přepočítat.');
-
-  const zdrazilo = kandidati.filter(c => nakupDnes(c.katalog_id) > c.nakupni_bez_dph).length;
-  if (!confirm(`Přepočítat ${kandidati.length} ${kandidati.length === 1 ? 'položku' : 'položek'} podle dnešního katalogu?\n\n`
-    + `Zdražilo: ${zdrazilo}, zlevnilo: ${kandidati.length - zdrazilo}.\n`
-    + `Nákupní cena se převezme z katalogu a prodejní se dopočítá tvojí přirážkou.\n`
-    + `Položky s nulovou přirážkou zůstanou beze změny.`)) return;
-
-  e.target.disabled = true;
-  let zmeneno = 0, preskoceno = 0;
-  for (const c of kandidati) {
-    const novy = nakupDnes(c.katalog_id);
-    const prirazka = Number(c.prirazka_pct) || 0;
-    if (!prirazka) { preskoceno++; continue; }
-    const { error } = await sb.from('cenik').update({
-      nakupni_bez_dph: novy,
-      prodejni_bez_dph: zaokr(novy * (1 + prirazka / 100))
-    }).eq('id', c.id);
-    if (error) { toast('Přepočet selhal: ' + prelozChybu(error), true); break; }
-    zmeneno++;
-  }
-  e.target.disabled = false;
-  await nactiCenik();
-  toast(`Přepočteno ${zmeneno} položek.` + (preskoceno ? ` ${preskoceno} bez přirážky jsem nechal být.` : ''));
-});
-
-let hledaniCislo = 0, hledaniCas;
-$('#k-hledat').addEventListener('input', () => { clearTimeout(hledaniCas); hledaniCas = setTimeout(hledej, 300); });
-$('#k-skladem').addEventListener('change', () => vykresliKatalog());
-
-async function hledej() {
-  const moje = ++hledaniCislo;
-  const q = $('#k-hledat').value.trim();
-  if (q.length < 2) {
-    stav.katalog = [];
-    $('#k-seznam').innerHTML = uvodKatalogu(stav.pocetKatalog);
-    return;
-  }
-  const data = await hledejKatalog(q);
-  if (moje !== hledaniCislo) return;
-  stav.katalog = data; vykresliKatalog();
-}
-
-function zasobaStitky(z) {
-  z = z || {};
-  return [['malesice', 'Malešice'], ['liben', 'Libeň']].map(([k, jm]) => {
-    if (z[k] == null) return '';
-    const n = Number(z[k]);
-    return `<span class="stitek${n > 0 ? ' ok' : ''}">${jm} ${n > 0 ? ks(n) : '0'}</span>`;
-  }).join('');
-}
-
-function vykresliKatalog() {
-  const el = $('#k-seznam');
-  if ($('#k-hledat').value.trim().length < 2) return;
-  const jen = $('#k-skladem').checked;
-  const vCeniku = new Set(stav.cenik.map(c => c.katalog_id).filter(Boolean));
-  const radky = stav.katalog.filter(p => !jen || Number(p.zasoby?.malesice) > 0 || Number(p.zasoby?.liben) > 0);
-  if (!radky.length) {
-    el.innerHTML = `<div class="prazdno">${stav.katalog.length ? 'Nic z nalezeného není skladem.' : 'Nic nenalezeno. Zkus kratší slovo nebo kód.'}</div>`;
-    return;
-  }
-  el.innerHTML = radky.map(p => {
-    const img = httpsUrl(p.url_obrazku), eshop = httpsUrl(p.url_produktu);
-    const meta = ['kód ' + p.kod, p.rozmer, p.pocet_na_palete ? ks(p.pocet_na_palete) + ' na paletě' : '',
-                  p.hmotnost_mj ? ks(p.hmotnost_mj) + ' kg' : ''].filter(Boolean).join(', ');
-    return `<div class="polozka">
-      <div class="obr${img ? '' : ' bez-obr'}">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}</div>
-      <div>
-        <div class="p-nazev">${esc(p.nazev)}</div>
-        <div class="p-meta">${esc(meta)}</div>
-        <div class="stitky">${zasobaStitky(p.zasoby)}${vCeniku.has(p.id) ? '<span class="stitek v-ceniku">V ceníku</span>' : ''}</div>
-      </div>
-      <div class="p-vpravo">
-        <div class="cena">${kc(p.cena_s_dph)}<small>s DPH / ${esc((p.mj || 'ks').toLowerCase())}</small></div>
-        <div class="p-akce">
-          ${eshop ? `<a class="btn btn-tichy btn-maly" href="${esc(eshop)}" target="_blank" rel="noopener">E-shop</a>` : ''}
-          <button class="btn btn-metr btn-maly" data-do-ceniku="${esc(p.id)}">Do ceníku</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-$('#k-seznam').addEventListener('error', e => {
-  if (e.target.tagName === 'IMG') { e.target.parentElement.classList.add('bez-obr'); e.target.remove(); }
-}, true);
-
-$('#k-seznam').addEventListener('click', e => {
-  const b = e.target.closest('[data-do-ceniku]'); if (!b) return;
-  const p = stav.katalog.find(x => x.id === b.dataset.doCeniku); if (!p) return;
-  const je = stav.cenik.find(c => c.katalog_id === p.id);
-  if (je) { otevriCenik(je); toast('Položka už v ceníku je, můžeš ji upravit.'); return; }
-  otevriCenik(zCatalogu(p), true);
-});
-
-function zCatalogu(p) {
-  const sazba = Number(p.sazba_dph ?? 21);
-  return {
-    katalog_id: p.id, nazev: p.nazev, typ: 'material', mj: (p.mj || '').toLowerCase(), sazba_dph: sazba,
-    nakupni_bez_dph: p.cena_s_dph != null ? zaokr(p.cena_s_dph / (1 + sazba / 100)) : null,
-    prirazka_pct: cislo(pamet.cti('prirazka', '15')) ?? 0, poznamka: 'Kód ' + p.kod
-  };
-}
-
-/* ================= CENÍK ================= */
-async function nactiCenik() {
-  const { data, error } = await sb.from('cenik').select('*').eq('firma_id', stav.firma.id).order('nazev');
-  if (error) { $('#c-seznam').innerHTML = `<div class="prazdno chyba">Ceník se nepodařilo načíst: ${esc(prelozChybu(error))}</div>`; return; }
-  stav.cenik = data || [];
-  await nactiKatalogoveCeny(stav.cenik.map(c => c.katalog_id));
-  vykresliCenik();
-}
-
-/** Aktuální ceny a zásoby položek katalogu, na které je něco navázané. */
-async function nactiKatalogoveCeny(idcka) {
-  const ids = [...new Set((idcka || []).filter(Boolean))].filter(id => !stav.katalogCeny[id]);
-  for (let i = 0; i < ids.length; i += 200) {
-    const { data } = await sb.from('katalog')
-      .select('id, kod, nazev, cena_s_dph, sazba_dph, zasoby').in('id', ids.slice(i, i + 200));
-    (data || []).forEach(k => { stav.katalogCeny[k.id] = k; });
-  }
-}
-
-/** Dnešní nákupní cena bez DPH podle katalogu. */
-function nakupDnes(katalogId) {
-  const k = katalogId && stav.katalogCeny[katalogId];
-  if (!k || k.cena_s_dph == null) return null;
-  return zaokr(k.cena_s_dph / (1 + Number(k.sazba_dph ?? 21) / 100));
-}
-
-/** Co je na položce ceníku špatně: zdražený nákup nebo ztrátová cena. */
-function kontrolaCeniku(c) {
-  const dnesni = nakupDnes(c.katalog_id);
-  const prodej = c.prodejni_bez_dph;
-  if (dnesni == null) return null;
-  if (prodej != null && zaokr(prodej) < zaokr(dnesni)) return { druh: 'ztrata', text: 'prodej pod nákupem ' + kc(dnesni) };
-  const ulozeny = c.nakupni_bez_dph;
-  if (ulozeny != null && ulozeny > 0) {
-    const zmena = (dnesni / ulozeny - 1) * 100;
-    if (zmena >= 1) return { druh: 'drazsi', text: 'nákup vzrostl o ' + ks(zaokr(zmena)) + ' % na ' + kc(dnesni) };
-    if (zmena <= -1) return { druh: 'levnejsi', text: 'nákup klesl na ' + kc(dnesni) };
-  }
-  return null;
-}
-const sDph = c => c.prodejni_bez_dph == null ? null : zaokr(c.prodejni_bez_dph * (1 + Number(c.sazba_dph ?? 21) / 100));
-
-$('#c-filtr').addEventListener('input', vykresliCenik);
-$('#c-pridat').addEventListener('click', () => otevriCenik({ typ: 'material', sazba_dph: 21, prirazka_pct: 0 }));
-
-function vykresliCenik() {
-  const el = $('#c-seznam'), f = bezDia($('#c-filtr').value.trim());
-  if (!stav.cenik.length) { el.innerHTML = '<div class="prazdno">Ceník je prázdný. Najdi materiál v katalogu a dej „Do ceníku“, nebo přidej vlastní položku či práci.</div>'; return; }
-  const jenKontrola = $('#c-kontrola').checked;
-  const radky = stav.cenik.filter(c => (!f || bezDia(c.nazev).includes(f) || bezDia(c.poznamka).includes(f))
-    && (!jenKontrola || ['drazsi', 'ztrata'].includes(kontrolaCeniku(c)?.druh)));
-  if (!radky.length) { el.innerHTML = `<div class="prazdno">${jenKontrola ? 'Ceny jsou v pořádku, nic ke kontrole.' : 'Filtru nic neodpovídá.'}</div>`; return; }
-  el.innerHTML = radky.map(c => {
-    const k = kontrolaCeniku(c);
-    return `<button class="rada rada-cenik" data-id="${esc(c.id)}">
-      <span><span class="p-nazev">${esc(c.nazev)}</span>
-        <span class="p-meta" style="display:block">${esc([c.mj, c.prirazka_pct ? 'přirážka ' + ks(c.prirazka_pct) + ' %' : '', c.poznamka].filter(Boolean).join(', '))}</span>
-        ${k ? `<span class="p-meta ${k.druh === 'levnejsi' ? '' : k.druh === 'ztrata' ? 'varovani' : 'pozor'}" style="display:block">${esc(k.text)}</span>` : ''}</span>
-      <span class="stitek c-typ">${esc(TYPY[c.typ] || c.typ)}</span>
-      <span class="c-ceny"><span class="cena">${kc(c.prodejni_bez_dph)}</span>bez DPH, s DPH ${kc(sDph(c))}</span>
-    </button>`;
-  }).join('');
-}
-$('#c-kontrola').addEventListener('change', vykresliCenik);
-
-$('#c-seznam').addEventListener('click', e => {
-  const r = e.target.closest('.rada'); if (!r) return;
-  const c = stav.cenik.find(x => x.id === r.dataset.id); if (c) otevriCenik(c);
-});
-
-const dlgCenik = $('#dlg-cenik');
-function otevriCenik(c, zKatalogu = false) {
-  $('#cd-id').value = c.id || ''; $('#cd-katalog').value = c.katalog_id || '';
-  $('#cd-titulek').textContent = c.id ? 'Upravit položku' : 'Nová položka ceníku';
-  $('#cd-nazev').value = c.nazev || ''; $('#cd-typ').value = c.typ || 'material'; $('#cd-mj').value = c.mj || '';
-  $('#cd-dph').value = String(Number(c.sazba_dph ?? 21));
-  $('#cd-nakup').value = vPole(c.nakupni_bez_dph); $('#cd-prirazka').value = vPole(c.prirazka_pct ?? 0);
-  $('#cd-poznamka').value = c.poznamka || '';
-  if (c.prodejni_bez_dph != null) $('#cd-prodej').value = vPole(c.prodejni_bez_dph); else prodejZPrirazky();
-  $('#cd-napoveda').classList.toggle('skryt', !zKatalogu);
-  const dnesni = nakupDnes(c.katalog_id);
-  $('#cd-katalog-info').classList.toggle('skryt', dnesni == null);
-  $('#cd-prevzit').classList.toggle('skryt', dnesni == null || zaokr(c.nakupni_bez_dph ?? 0) === dnesni);
-  if (dnesni != null) {
-    const k = kontrolaCeniku(c);
-    $('#cd-katalog-info').textContent = 'Nákup podle dnešního katalogu: ' + kc(dnesni)
-      + (k ? ' – ' + k.text : '');
-    $('#cd-katalog-info').className = 'napoveda' + (k && k.druh !== 'levnejsi' ? ' chyba' : '');
-    $('#cd-prevzit').dataset.cena = String(dnesni);
-  }
-  $('#cd-smazat').classList.toggle('skryt', !c.id);
-  souhrnCenik(); dlgCenik.showModal(); $('#cd-nazev').focus();
-}
-function prodejZPrirazky() {
-  const n = cislo($('#cd-nakup').value), p = cislo($('#cd-prirazka').value) ?? 0;
-  $('#cd-prodej').value = n == null ? '' : vPole(n * (1 + p / 100));
-}
-function prirazkaZProdeje() {
-  const n = cislo($('#cd-nakup').value), s = cislo($('#cd-prodej').value);
-  if (n && s != null) $('#cd-prirazka').value = vPole((s / n - 1) * 100);
-}
-function souhrnCenik() {
-  const s = cislo($('#cd-prodej').value), d = cislo($('#cd-dph').value) ?? 21;
-  $('#cd-sdph').textContent = s == null ? '–' : kc(s * (1 + d / 100));
-}
-$('#cd-nakup').addEventListener('input', () => { prodejZPrirazky(); souhrnCenik(); });
-$('#cd-prirazka').addEventListener('input', () => { prodejZPrirazky(); souhrnCenik(); });
-$('#cd-prodej').addEventListener('input', () => { prirazkaZProdeje(); souhrnCenik(); });
-$('#cd-dph').addEventListener('change', souhrnCenik);
-$('#cd-prevzit').addEventListener('click', e => {
-  $('#cd-nakup').value = vPole(Number(e.target.dataset.cena));
-  prodejZPrirazky(); souhrnCenik();
-  $('#cd-prevzit').classList.add('skryt');
-  toast('Nákup převzat z katalogu, prodej přepočítán podle přirážky.');
-});
-
-$('#f-polozka').addEventListener('submit', async e => {
-  e.preventDefault();
-  const nazev = $('#cd-nazev').value.trim();
-  if (!nazev) { toast('Doplň název položky.', true); return; }
-  const nakup = cislo($('#cd-nakup').value), prodej = cislo($('#cd-prodej').value);
-  const z = {
-    nazev, typ: $('#cd-typ').value, mj: $('#cd-mj').value.trim() || null,
-    sazba_dph: cislo($('#cd-dph').value) ?? 21,
-    nakupni_bez_dph: nakup == null ? null : zaokr(nakup),
-    prirazka_pct: zaokr(cislo($('#cd-prirazka').value) ?? 0),
-    prodejni_bez_dph: prodej == null ? null : zaokr(prodej),
-    poznamka: $('#cd-poznamka').value.trim() || null
-  };
-  const id = $('#cd-id').value;
-  const puvodni = stav.cenik.find(x => x.id === id);
-  if (puvodni && puvodni.prodejni_bez_dph != null && z.prodejni_bez_dph != null
-      && z.prodejni_bez_dph < puvodni.prodejni_bez_dph
-      && !confirm('Snižuješ prodejní cenu z ' + kc(puvodni.prodejni_bez_dph) + ' na ' + kc(z.prodejni_bez_dph) + '.\n\nOpravdu uložit?')) {
-    return;
-  }
-  if (z.nakupni_bez_dph != null && z.prodejni_bez_dph != null && z.prodejni_bez_dph < z.nakupni_bez_dph
-      && !confirm('Prodejní cena je nižší než nákupní. Na položce proděláš.\n\nOpravdu uložit?')) {
-    return;
-  }
-  $('#cd-ulozit').disabled = true;
-  let v;
-  if (id) v = await sb.from('cenik').update(z).eq('id', id);
-  else { z.firma_id = stav.firma.id; z.katalog_id = $('#cd-katalog').value || null; v = await sb.from('cenik').insert(z); }
-  $('#cd-ulozit').disabled = false;
-  if (v.error) return toast('Uložení selhalo: ' + prelozChybu(v.error), true);
-  if (z.typ === 'material') pamet.pis('prirazka', String(z.prirazka_pct));
-  dlgCenik.close(); toast(id ? 'Položka upravena.' : 'Uloženo do ceníku.');
-  await nactiCenik(); vykresliKatalog();
-});
-
-$('#cd-smazat').addEventListener('click', async () => {
-  const id = $('#cd-id').value;
-  if (!id || !confirm('Smazat položku z ceníku?')) return;
-  const { error } = await sb.from('cenik').delete().eq('id', id);
-  if (error) return toast('Smazání selhalo: ' + prelozChybu(error), true);
-  dlgCenik.close(); toast('Položka smazána.'); await nactiCenik(); vykresliKatalog();
-});
-
-/* ================= KONTAKTY ================= */
-async function nactiKontakty() {
-  const { data, error } = await sb.from('kontakty').select('*').eq('firma_id', stav.firma.id).order('nazev');
-  if (error) { $('#ko-seznam').innerHTML = `<div class="prazdno chyba">${esc(prelozChybu(error))}</div>`; return; }
-  stav.kontakty = data || []; vykresliKontakty(); naplnKontakty();
-}
-$('#ko-filtr').addEventListener('input', vykresliKontakty);
-$('#ko-pridat').addEventListener('click', () => otevriKontakt({}));
-
-function adresaRadek(k) {
-  return [k.ulice, [k.psc, k.mesto].filter(Boolean).join(' ')].filter(Boolean).join(', ');
-}
-
-function vykresliKontakty() {
-  const el = $('#ko-seznam'), f = bezDia($('#ko-filtr').value.trim());
-  if (!stav.kontakty.length) { el.innerHTML = '<div class="prazdno">Zatím žádný odběratel. Přidej první kontakt.</div>'; return; }
-  const radky = stav.kontakty.filter(k => !f || [k.nazev, k.mesto, k.ico, k.email].some(x => bezDia(x).includes(f)));
-  if (!radky.length) { el.innerHTML = '<div class="prazdno">Filtru nic neodpovídá.</div>'; return; }
-  el.innerHTML = radky.map(k => `<button class="rada rada-kontakt" data-id="${esc(k.id)}">
-      <span><span class="p-nazev">${esc(k.nazev)}</span>
-        <span class="p-meta" style="display:block">${esc([adresaRadek(k), k.telefon, k.email].filter(Boolean).join(' · '))}</span></span>
-      <span class="stitek">${esc(k.ico ? 'IČO ' + k.ico : 'bez IČO')}</span>
-    </button>`).join('');
-}
-
-$('#ko-seznam').addEventListener('click', e => {
-  const r = e.target.closest('.rada'); if (!r) return;
-  const k = stav.kontakty.find(x => x.id === r.dataset.id); if (k) otevriKontakt(k);
-});
-
-const dlgKontakt = $('#dlg-kontakt');
-function otevriKontakt(k) {
-  $('#kd-id').value = k.id || '';
-  $('#kd-titulek').textContent = k.id ? 'Upravit kontakt' : 'Nový kontakt';
-  ['nazev', 'ico', 'dic', 'ulice', 'mesto', 'psc', 'email', 'telefon', 'poznamka'].forEach(p => { $('#kd-' + p).value = k[p] || ''; });
-  $('#kd-smazat').classList.toggle('skryt', !k.id);
-  dlgKontakt.showModal(); $('#kd-nazev').focus();
-}
-
-$('#f-kontakt').addEventListener('submit', async e => {
-  e.preventDefault();
-  const nazev = $('#kd-nazev').value.trim();
-  if (!nazev) return toast('Doplň jméno nebo firmu.', true);
-  const z = { nazev };
-  ['ico', 'dic', 'ulice', 'mesto', 'psc', 'email', 'telefon', 'poznamka'].forEach(p => { z[p] = $('#kd-' + p).value.trim() || null; });
-  const id = $('#kd-id').value;
-  let v;
-  if (id) v = await sb.from('kontakty').update(z).eq('id', id).select().maybeSingle();
-  else { z.firma_id = stav.firma.id; v = await sb.from('kontakty').insert(z).select().maybeSingle(); }
-  if (v.error) return toast('Uložení selhalo: ' + prelozChybu(v.error), true);
-  dlgKontakt.close(); toast('Kontakt uložen.');
-  await nactiKontakty();
-  if (!id && stav.doklad) { $('#d-kontakt').value = v.data.id; }
-});
-
-$('#kd-smazat').addEventListener('click', async () => {
-  const id = $('#kd-id').value;
-  if (!id || !confirm('Smazat kontakt? Na vystavených dokladech odběratel zůstane.')) return;
-  const { error } = await sb.from('kontakty').delete().eq('id', id);
-  if (error) return toast('Smazání selhalo: ' + prelozChybu(error), true);
-  dlgKontakt.close(); toast('Kontakt smazán.'); nactiKontakty();
-});
-
-function naplnKontakty() {
-  const s = $('#d-kontakt'), vybrany = s.value;
-  s.innerHTML = '<option value="">– bez odběratele –</option>' +
-    stav.kontakty.map(k => `<option value="${esc(k.id)}">${esc(k.nazev)}${k.mesto ? ', ' + esc(k.mesto) : ''}</option>`).join('');
-  if (vybrany) s.value = vybrany;
-}
-$('#d-novy-kontakt').addEventListener('click', () => otevriKontakt({}));
-
-/* ================= SEZNAM DOKLADŮ ================= */
-async function nactiDoklady() {
-  const { data, error } = await sb.from('doklady').select('*').eq('firma_id', stav.firma.id)
-    .order('datum_vystaveni', { ascending: false }).order('cislo', { ascending: false }).limit(200);
-  if (error) { $('#dk-seznam').innerHTML = `<div class="prazdno chyba">${esc(prelozChybu(error))}</div>`; return; }
-  stav.doklady = data || []; vykresliDoklady();
-}
-let dkTyp = '';
-$('#dk-filtr').addEventListener('input', vykresliDoklady);
-$('#dk-typy').addEventListener('click', e => {
-  const b = e.target.closest('[data-typ]'); if (!b) return;
-  dkTyp = b.dataset.typ;
-  $$('#dk-typy .chip').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.typ === dkTyp)));
-  vykresliDoklady();
-});
-
-function vykresliDoklady() {
-  const el = $('#dk-seznam'), f = bezDia($('#dk-filtr').value.trim()), t = dkTyp;
-  if (!stav.doklady.length) { el.innerHTML = '<div class="prazdno">Zatím žádný doklad. Začni novou nabídkou.</div>'; return; }
-  const radky = stav.doklady.filter(d => (!t || d.typ === t) &&
-    (!f || bezDia(d.cislo).includes(f) || bezDia(d.odberatel?.nazev).includes(f)));
-  if (!radky.length) {
-    el.innerHTML = `<div class="prazdno">${t === 'nabidka' ? 'Zatím žádná nabídka.' : t === 'faktura' ? 'Zatím žádná faktura.' : t === 'smlouva' ? 'Zatím žádná smlouva.' : 'Filtru nic neodpovídá.'}</div>`;
-    return;
-  }
-  el.innerHTML = radky.map(d => `<button class="rada rada-doklad" data-id="${esc(d.id)}">
-      <span class="cislo-dokladu">${esc(d.cislo)}</span>
-      <span><span class="p-nazev">${esc(d.odberatel?.nazev || 'Bez odběratele')}</span>
-        <span class="p-meta" style="display:block">${esc(d.typ === 'faktura' ? 'Faktura' : d.typ === 'smlouva' ? 'Smlouva o dílo' : 'Nabídka')}, ${esc(datum(d.datum_vystaveni))}</span></span>
-      <span class="stitek d-stav${d.stav === 'zaplaceno' || d.stav === 'prijato' ? ' ok' : d.stav === 'stornovano' ? ' varovani' : ''}">${esc(STAVY[d.stav] || d.stav)}</span>
-      <span class="c-ceny"><span class="cena">${kc(d.celkem_s_dph)}</span>s DPH</span>
-    </button>`).join('');
-}
-
-$('#dk-seznam').addEventListener('click', e => {
-  const r = e.target.closest('.rada'); if (r) otevriDoklad(r.dataset.id);
-});
-$('#dk-nova-nabidka').addEventListener('click', () => novyDoklad('nabidka'));
-$('#dk-nova-faktura').addEventListener('click', () => novyDoklad('faktura'));
-
-async function novyDoklad(typ, zaklad = null) {
-  const { data: cisloDokladu, error } = await sb.rpc('dalsi_cislo', { p_firma: stav.firma.id, p_typ: typ });
-  if (error) return toast('Nepodařilo se získat číslo dokladu: ' + prelozChybu(error), true);
-  const z = {
-    firma_id: stav.firma.id, typ, cislo: cisloDokladu, datum_vystaveni: dnes(),
-    stav: 'koncept',
-    datum_splatnosti: typ === 'faktura' ? plusDni(dnes(), 14) : null,
-    termin_od: typ === 'smlouva' ? dnes() : null,
-    termin_do: typ === 'smlouva' ? plusDni(dnes(), 30) : null,
-    zaruka_mesice: typ === 'smlouva' ? 24 : null,
-    zaloha_pct: typ === 'smlouva' ? 30 : null,
-    datum_plneni: typ === 'faktura' ? dnes() : null,
-    variabilni_symbol: typ === 'faktura' ? cisloDokladu.replace(/\D/g, '') : null,
-    zpusob_platby: typ === 'faktura' ? 'Převodem' : null
-  };
-  if (zaklad) {
-    z.kontakt_id = zaklad.kontakt_id; z.odberatel = zaklad.odberatel;
-    z.uvod = zaklad.uvod; z.poznamka = zaklad.poznamka;
-  }
-  const { data, error: e2 } = await sb.from('doklady').insert(z).select().single();
-  if (e2) return toast('Doklad se nepodařilo založit: ' + prelozChybu(e2), true);
-  if (zaklad) {
-    const kopie = zaklad.polozky.map((p, i) => ({
-      doklad_id: data.id, poradi: i, cenik_id: p.cenik_id, katalog_id: p.katalog_id, typ: p.typ,
-      nazev: p.nazev, mj: p.mj, mnozstvi: p.mnozstvi, cena_bez_dph: p.cena_bez_dph,
-      sleva_pct: p.sleva_pct, sazba_dph: p.sazba_dph, poznamka: p.poznamka
-    }));
-    if (kopie.length) await sb.from('polozky_dokladu').insert(kopie);
-  }
-  await nactiDoklady();
-  await otevriDoklad(data.id);
-}
-
-/* ================= EDITOR DOKLADU ================= */
-async function otevriDoklad(id) {
-  const [{ data: d, error: e1 }, { data: p, error: e2 }] = await Promise.all([
-    sb.from('doklady').select('*').eq('id', id).single(),
-    sb.from('polozky_dokladu').select('*').eq('doklad_id', id).order('poradi')
-  ]);
-  if (e1 || e2) return toast('Doklad se nepodařilo načíst: ' + prelozChybu(e1 || e2), true);
-  stav.doklad = d;
-  stav.polozky = (p || []).map(x => ({ ...x }));
-  const faktura = d.typ === 'faktura', smlouva = d.typ === 'smlouva';
-  $('#d-nadpis').textContent = (faktura ? 'Faktura ' : smlouva ? 'Smlouva o dílo ' : 'Nabídka ') + d.cislo;
-  $('#d-kontakt').value = d.kontakt_id || '';
-  $('#d-stav').value = d.stav;
-  $('#d-vystaveni').value = d.datum_vystaveni || dnes();
-  $('#d-splatnost').value = d.datum_splatnosti || '';
-  $('#d-plneni').value = d.datum_plneni || '';
-  $('#d-vs').value = d.variabilni_symbol || '';
-  $('#d-platba').value = d.zpusob_platby || '';
-  $('#d-uvod').value = d.uvod || '';
-  $('#d-poznamka').value = d.poznamka || '';
-  $('#d-misto').value = d.misto_plneni || '';
-  $('#d-od').value = d.termin_od || '';
-  $('#d-do').value = d.termin_do || '';
-  $('#d-zaruka').value = d.zaruka_mesice ?? '';
-  $('#d-zaloha').value = vPole(d.zaloha_pct);
-  $('#d-text').value = d.smluvni_text || '';
-  if (smlouva && !d.smluvni_text) $('#d-text').value = stav.firma.sablona_smlouvy || '';
-  $$('[data-jen-faktura]').forEach(x => x.classList.toggle('skryt', !faktura));
-  $$('[data-jen-smlouva]').forEach(x => x.classList.toggle('skryt', !smlouva));
-  $('#d-na-fakturu').classList.toggle('skryt', faktura);
-  $('#d-na-smlouvu').classList.toggle('skryt', smlouva || faktura);
-  $('#d-objednavka').classList.toggle('skryt', faktura);
-  $('#d-info').textContent = 'Ceny na dokladu jsou uzamčené. Pozdější změna ceníku ani noční import je nezmění.';
-  vykresliPolozky();
-  prepniTab('doklad');
-  await nactiKatalogoveCeny(stav.polozky.map(x => x.katalog_id));
-  await nactiPosledniCeny();
-  obnovInfo();
-  if (smlouva) {
-    if (!$('#d-text').value.trim()) $('#d-text').value = textSmlouvy();
-    obnovNahled();
-  }
-}
-$('#d-zpet').addEventListener('click', () => { stav.doklad = null; prepniTab(stav.predchoziTab === 'doklad' ? 'doklady' : stav.predchoziTab); nactiDoklady(); });
-
-function vykresliPolozky() {
-  const el = $('#d-polozky');
-  if (!stav.polozky.length) { el.innerHTML = '<div class="prazdno">Přidej první položku z ceníku, z katalogu, nebo jako vlastní řádek.</div>'; souhrnDoklad(); return; }
-  el.innerHTML = stav.polozky.map((p, i) => `
-    <div class="dp" data-i="${i}">
-      <span class="nazev-pole"><input class="pole" data-f="nazev" value="${esc(p.nazev)}" aria-label="Název">
-        <span class="p-meta" data-info="${i}"></span></span>
-      <input class="pole" data-f="mj" value="${esc(p.mj || '')}" aria-label="MJ">
-      <input class="pole" data-f="mnozstvi" inputmode="decimal" value="${vPole(p.mnozstvi)}" aria-label="Množství">
-      <input class="pole" data-f="sleva_pct" inputmode="decimal" value="${vPole(p.sleva_pct)}" aria-label="Sleva">
-      <input class="pole" data-f="sazba_dph" inputmode="decimal" value="${vPole(p.sazba_dph)}" aria-label="DPH">
-      <input class="pole vpravo" data-f="cena_bez_dph" inputmode="decimal" value="${vPole(p.cena_bez_dph)}" aria-label="Cena bez DPH">
-      <span class="akce-radku" style="display:flex;gap:.3rem">
-        <button class="btn btn-metr btn-maly" data-vymenit="${i}" title="Vybrat položku z ceníku nebo katalogu">⇄ Vybrat</button>
-        <button class="btn btn-tichy btn-maly" data-smazat="${i}" aria-label="Odebrat řádek" title="Odebrat řádek">×</button>
-      </span>
-    </div>`).join('');
-  souhrnDoklad();
-  obnovInfo();
-}
-
-$('#d-polozky').addEventListener('input', e => {
-  const pole = e.target.dataset.f; if (!pole) return;
-  const i = Number(e.target.closest('.dp').dataset.i);
-  const v = e.target.value;
-  stav.polozky[i][pole] = ['nazev', 'mj'].includes(pole) ? v : (cislo(v) ?? 0);
-  souhrnDoklad(); obnovInfo();
-});
-$('#d-polozky').addEventListener('click', e => {
-  const b = e.target.closest('[data-smazat]');
-  if (b) { stav.polozky.splice(Number(b.dataset.smazat), 1); vykresliPolozky(); return; }
-
-  const v = e.target.closest('[data-vymenit]');
-  if (!v) return;
-  const i = Number(v.dataset.vymenit);
-  const p = stav.polozky[i];
-  otevriVyber(p.katalog_id ? 'katalog' : 'cenik', async (zdroj, rezim) => {
-    const mn = p.mnozstvi, puvodniMj = p.mj;
-    if (rezim === 'cenik') {
-      Object.assign(p, { cenik_id: zdroj.id, katalog_id: zdroj.katalog_id || null, typ: zdroj.typ || 'material',
-        nazev: zdroj.nazev, mj: zdroj.mj || p.mj, cena_bez_dph: zdroj.prodejni_bez_dph ?? 0,
-        sazba_dph: stav.firma.platce_dph ? Number(zdroj.sazba_dph ?? 21) : 0 });
-    } else {
-      const sazba = Number(zdroj.sazba_dph ?? 21);
-      const vCeniku = stav.cenik.find(c => c.katalog_id === zdroj.id);
-      Object.assign(p, { cenik_id: vCeniku?.id || null, katalog_id: zdroj.id, typ: 'material',
-        nazev: zdroj.nazev, mj: (zdroj.mj || p.mj || '').toLowerCase(),
-        cena_bez_dph: vCeniku?.prodejni_bez_dph ?? (zdroj.cena_s_dph != null ? zaokr(zdroj.cena_s_dph / (1 + sazba / 100)) : 0),
-        sazba_dph: stav.firma.platce_dph ? sazba : 0, poznamka: p.poznamka || ('Kód ' + zdroj.kod) });
-    }
-    p.mnozstvi = mn;
-    await nactiKatalogoveCeny([p.katalog_id]);
-
-    const prevod = prepoctiMnozstvi(mn, puvodniMj, p.mj, p.katalog_id);
-    if (!prevod) {
-      toast('Položka vyměněna, množství zůstalo.');
-    } else if (prevod.mnozstvi != null
-        && confirm(`Jednotka se mění z „${puvodniMj}" na „${p.mj}".\n\nPřepočítat množství podle hmotnosti? ${prevod.popis} = ${ks(prevod.mnozstvi)} ${p.mj}`)) {
-      p.mnozstvi = prevod.mnozstvi;
-      p.poznamka = (p.poznamka ? p.poznamka + ', ' : '') + 'přepočteno: ' + prevod.popis;
-      toast(`Přepočteno na ${ks(prevod.mnozstvi)} ${p.mj}.`);
-    } else {
-      p.mnozstviPozor = true;
-      toast(`Pozor: jednotka se změnila z „${puvodniMj}" na „${p.mj}". Zkontroluj množství.`, true);
-    }
-    vykresliPolozky();
-  });
-});
-
-function souhrnDoklad() {
-  let bez = 0, dph = 0;
-  stav.polozky.forEach(p => {
-    const c = zaokr((Number(p.mnozstvi) || 0) * (Number(p.cena_bez_dph) || 0) * (1 - (Number(p.sleva_pct) || 0) / 100));
-    bez += c; dph += zaokr(c * (Number(p.sazba_dph) || 0) / 100);
-  });
-  $('#d-bez').textContent = kc(bez); $('#d-dph').textContent = kc(dph); $('#d-celkem').textContent = kc(bez + dph);
-  return { bez: zaokr(bez), dph: zaokr(dph) };
-}
-
-// sklad a hlídání cen přímo u řádků dokladu
-function klicPolozky(p) {
-  return p.cenik_id ? 'c:' + p.cenik_id
-    : p.katalog_id ? 'k:' + p.katalog_id
-    : 'n:' + String(p.nazev || '').trim().toLowerCase();
-}
-
-const MJ_NORM = { 'ks': 'ks', 'kus': 'ks', 'kg': 'kg', 'm2': 'm²', 'm²': 'm²', 'm3': 'm³', 'm³': 'm³',
-  'm': 'm', 'bm': 'm', 'l': 'l', 'bal': 'bal', 'pal': 'pal', 'par': 'par', 'rol': 'rol' };
-const mjNorm = m => MJ_NORM[String(m || '').trim().toLowerCase()] || String(m || '').trim().toLowerCase();
-
-/**
- * Když se jednotka změní (kalkulačka počítá maltu v kg, katalog ji prodává na kusy),
- * zkusí množství přepočítat přes hmotnost z katalogu. Jinak vrátí null a nechá to na uživateli.
- */
-function prepoctiMnozstvi(mnozstvi, mjZ, mjNa, katalogId) {
-  const z = mjNorm(mjZ), na = mjNorm(mjNa);
-  if (!z || !na || z === na) return null;
-  const k = katalogId && stav.katalogCeny[katalogId];
-  const hm = k && Number(k.hmotnost_mj) > 0 ? Number(k.hmotnost_mj) : null;
-  if (z === 'kg' && na === 'ks' && hm) return { mnozstvi: Math.ceil(mnozstvi / hm), popis: `${ks(mnozstvi)} kg / ${ks(hm)} kg na kus` };
-  if (z === 'ks' && na === 'kg' && hm) return { mnozstvi: zaokr(mnozstvi * hm), popis: `${ks(mnozstvi)} ks × ${ks(hm)} kg` };
-  return { mnozstvi: null, popis: `${z} → ${na}` };
-}
-
-/** Text pod řádkem: sklad, a hlavně upozornění na podezřele nízkou cenu. */
-function infoRadku(p) {
-  const casti = [], varovani = [];
-  const k = p.katalog_id && stav.katalogCeny[p.katalog_id];
-  const mn = Number(p.mnozstvi) || 0;
-  const cena = Number(p.cena_bez_dph) || 0;
-
-  if (k) {
-    const m = Number(k.zasoby?.malesice) || 0, l = Number(k.zasoby?.liben) || 0;
-    casti.push(`kód ${k.kod}, skladem ${ks(m)} + ${ks(l)}`);
-    if (m + l < mn) varovani.push('skladem je méně, než objednáváš');
-  }
-
-  const c = stav.cenik.find(x => x.id === p.cenik_id)
-    || (p.katalog_id ? stav.cenik.find(x => x.katalog_id === p.katalog_id) : null);
-  const nakup = nakupDnes(p.katalog_id) ?? c?.nakupni_bez_dph ?? null;
-
-  if (p.mnozstviPozor) varovani.push('zkontroluj množství, změnila se jednotka');
-
-  if (cena > 0) {
-    if (nakup != null && cena < zaokr(nakup)) varovani.push('pod nákupní cenou ' + kc(nakup));
-    else if (c?.prodejni_bez_dph != null && cena < zaokr(c.prodejni_bez_dph))
-      varovani.push('nižší než ceník ' + kc(c.prodejni_bez_dph));
-    const posl = stav.posledniCeny[klicPolozky(p)];
-    if (posl && cena < zaokr(posl.cena))
-      varovani.push(`posledně jsi účtoval ${kc(posl.cena)} (${posl.cislo})`);
-  }
-  return { text: [...casti, ...varovani].join(' · '), varovani: varovani.length > 0 };
-}
-
-function obnovInfo() {
-  let pocet = 0;
-  stav.polozky.forEach((p, i) => {
-    const el = $(`[data-info="${i}"]`);
-    if (!el) return;
-    const r = infoRadku(p);
-    el.textContent = r.text;
-    el.classList.toggle('varovani', r.varovani);
-    if (r.varovani) pocet++;
-  });
-  $('#d-varovani').textContent = pocet
-    ? `${pocet} ${pocet === 1 ? 'položka je' : pocet < 5 ? 'položky jsou' : 'položek je'} pod obvyklou cenou nebo nejsou skladem. Zkontroluj zvýrazněné řádky.`
-    : '';
-}
-
-/** Naposledy účtované ceny, aby aplikace poznala, že jdeš pod svou cenu. */
-async function nactiPosledniCeny() {
-  stav.posledniCeny = {};
-  const { data, error } = await sb.from('polozky_dokladu')
-    .select('nazev, cena_bez_dph, cenik_id, katalog_id, doklad:doklady!inner(id, cislo, firma_id, datum_vystaveni)')
-    .eq('doklad.firma_id', stav.firma.id)
-    .limit(500);
-  if (error || !data) return;
-  data
-    .filter(x => x.doklad && x.doklad.id !== stav.doklad?.id && Number(x.cena_bez_dph) > 0)
-    .sort((a, b) => String(a.doklad.datum_vystaveni).localeCompare(String(b.doklad.datum_vystaveni)))
-    .forEach(x => {
-      stav.posledniCeny[klicPolozky(x)] = { cena: Number(x.cena_bez_dph), cislo: x.doklad.cislo };
-    });
-}
-
-/* ---- přidávání položek ---- */
-const dlgVyber = $('#dlg-vyber');
-let vyberRezim = 'cenik';
-let vyberCallback = null;   // když je vyplněný, vybraná položka se předá sem místo do dokladu
-
-$('#d-z-ceniku').addEventListener('click', () => otevriVyber('cenik'));
-$('#d-z-katalogu').addEventListener('click', () => otevriVyber('katalog'));
-$('#d-volna').addEventListener('click', () => {
-  stav.polozky.push({ typ: 'ostatni', nazev: '', mj: '', mnozstvi: 1, cena_bez_dph: 0, sleva_pct: 0, sazba_dph: stav.firma.platce_dph ? 21 : 0 });
-  vykresliPolozky();
-  const posl = $('#d-polozky').lastElementChild?.querySelector('input'); posl?.focus();
-});
-
-function otevriVyber(rezim, callback = null) {
-  vyberCallback = callback;
-  $('#vd-hledat').value = '';
-  nastavZdroj(rezim);
-  dlgVyber.showModal();
-  $('#vd-hledat').focus();
-}
-
-/** Přepnutí mezi ceníkem a katalogem přímo v otevřeném dialogu. */
-function nastavZdroj(rezim) {
-  vyberRezim = rezim;
-  $('#vd-titulek').textContent = rezim === 'cenik' ? 'Vybrat z ceníku' : 'Vybrat z katalogu';
-  $('#vd-hledat').placeholder = rezim === 'cenik' ? 'Hledat v ceníku' : 'Hledat v katalogu (název, kód, EAN)';
-  $$('#vd-zdroje .chip').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.zdroj === rezim)));
-  hledejVeVyberu();
-}
-
-$('#vd-zdroje').addEventListener('click', e => {
-  const b = e.target.closest('[data-zdroj]');
-  if (b) nastavZdroj(b.dataset.zdroj);
-});
-
-async function hledejVeVyberu() {
-  const q = bezDia($('#vd-hledat').value.trim());
-  if (vyberRezim === 'cenik') {
-    vykresliVyber(stav.cenik.filter(c => !q || bezDia(c.nazev).includes(q)));
-  } else {
-    vykresliVyber(q.length < 2 ? [] : await hledejKatalog(q, 30));
-  }
-}
-
-let vyberCas;
-$('#vd-hledat').addEventListener('input', () => {
-  clearTimeout(vyberCas);
-  vyberCas = setTimeout(hledejVeVyberu, 300);
-});
-
-function vykresliVyber(polozky) {
-  const el = $('#vd-seznam');
-  if (!polozky.length) {
-    el.innerHTML = `<div class="prazdno">${vyberRezim === 'cenik' ? 'V ceníku nic takového není.' : 'Napiš aspoň dva znaky.'}</div>`;
-    return;
-  }
-  el.innerHTML = polozky.map(p => {
-    const cena = vyberRezim === 'cenik' ? p.prodejni_bez_dph
-      : (p.cena_s_dph != null ? zaokr(p.cena_s_dph / (1 + Number(p.sazba_dph ?? 21) / 100)) : null);
-    const meta = vyberRezim === 'cenik' ? [TYPY[p.typ], p.mj].filter(Boolean).join(', ')
-      : ['kód ' + p.kod, p.rozmer].filter(Boolean).join(', ');
-    return `<button class="rada rada-cenik" data-vyber="${esc(p.id)}">
-      <span><span class="p-nazev">${esc(p.nazev)}</span><span class="p-meta" style="display:block">${esc(meta)}</span>
-      ${vyberRezim === 'katalog' ? `<span class="stitky">${zasobaStitky(p.zasoby)}</span>` : ''}</span>
-      <span></span>
-      <span class="c-ceny"><span class="cena">${kc(cena)}</span>bez DPH</span></button>`;
-  }).join('');
-}
-
-$('#vd-seznam').addEventListener('click', e => {
-  const b = e.target.closest('[data-vyber]'); if (!b) return;
-  const id = b.dataset.vyber;
-  if (vyberCallback) {
-    const zdroj = vyberRezim === 'cenik' ? stav.cenik.find(x => x.id === id) : stav.katalogVyber?.find(x => x.id === id);
-    if (zdroj) { const cb = vyberCallback; vyberCallback = null; dlgVyber.close(); cb(zdroj, vyberRezim); }
-    return;
-  }
-  if (vyberRezim === 'cenik') {
-    const c = stav.cenik.find(x => x.id === id); if (!c) return;
-    stav.polozky.push({
-      cenik_id: c.id, katalog_id: c.katalog_id || null, typ: c.typ, nazev: c.nazev, mj: c.mj,
-      mnozstvi: 1, cena_bez_dph: c.prodejni_bez_dph ?? 0, sleva_pct: 0,
-      sazba_dph: stav.firma.platce_dph ? Number(c.sazba_dph ?? 21) : 0, poznamka: null
-    });
-  } else {
-    const k = stav.katalogVyber?.find(x => x.id === id) || null;
-    if (!k) return;
-    const sazba = Number(k.sazba_dph ?? 21);
-    const vCeniku = stav.cenik.find(c => c.katalog_id === k.id);
-    stav.polozky.push({
-      cenik_id: vCeniku?.id || null, katalog_id: k.id, typ: 'material', nazev: k.nazev, mj: (k.mj || '').toLowerCase(),
-      mnozstvi: 1,
-      cena_bez_dph: vCeniku?.prodejni_bez_dph ?? (k.cena_s_dph != null ? zaokr(k.cena_s_dph / (1 + sazba / 100)) : 0),
-      sleva_pct: 0, sazba_dph: stav.firma.platce_dph ? sazba : 0, poznamka: 'Kód ' + k.kod
-    });
-  }
-  dlgVyber.close();
-  nactiKatalogoveCeny(stav.polozky.map(x => x.katalog_id)).then(obnovInfo);
-  vykresliPolozky(); toast('Položka přidána.');
-});
-
-// výsledky katalogu ve výběru si držíme zvlášť
-const puvodniVykresliVyber = vykresliVyber;
-vykresliVyber = function (polozky) {
-  if (vyberRezim === 'katalog') stav.katalogVyber = polozky;
-  puvodniVykresliVyber(polozky);
-};
-
-$$('[data-zavrit]').forEach(b => b.addEventListener('click', e => e.target.closest('dialog').close()));
-
-/* ---- uložení dokladu ---- */
-$('#d-ulozit').addEventListener('click', async () => {
-  if (!(await ulozDoklad())) return;
-  const n = await doCeniku();
-  if (n) toast(`Doklad uložen, do ceníku přibyl${n === 1 ? 'a 1 položka' : 'y ' + n + ' položky'}.`);
-});
-
-/* ---- ručně psané položky se ukládají i do ceníku ---- */
-function rucniNoveKPolozkam() {
-  return stav.polozky.filter(p => !p.cenik_id && !p.katalog_id && (p.nazev || '').trim()
-    && Number(p.cena_bez_dph) > 0
-    && !stav.cenik.some(c => (c.nazev || '').trim().toLowerCase() === p.nazev.trim().toLowerCase()));
-}
-
-/** Uloží ruční řádky dokladu do ceníku a naváže je na doklad. Vrací počet. */
-async function doCeniku() {
-  const nove = rucniNoveKPolozkam();
-  if (!nove.length) return 0;
-  const { data, error } = await sb.from('cenik').insert(nove.map(p => ({
-    firma_id: stav.firma.id,
-    typ: p.typ || 'ostatni',
-    nazev: p.nazev.trim(),
-    mj: p.mj || null,
-    prodejni_bez_dph: zaokr(Number(p.cena_bez_dph)),
-    sazba_dph: Number(p.sazba_dph) || 21,
-    prirazka_pct: 0,
-    poznamka: 'Z dokladu ' + stav.doklad.cislo
-  }))).select();
-  if (error) { toast('Do ceníku se položky nepodařilo uložit: ' + prelozChybu(error), true); return 0; }
-  (data || []).forEach(c => {
-    const p = stav.polozky.find(x => !x.cenik_id && (x.nazev || '').trim() === c.nazev);
-    if (p) p.cenik_id = c.id;
-  });
-  await ulozDoklad(true);
-  await nactiCenik();
-  vykresliPolozky();
-  return (data || []).length;
-}
-
-async function ulozDoklad(tise = false) {
-  if (!stav.doklad) return;
-  const k = stav.kontakty.find(x => x.id === $('#d-kontakt').value) || null;
-  const z = {
-    kontakt_id: k?.id || null,
-    odberatel: k ? { nazev: k.nazev, ico: k.ico, dic: k.dic, ulice: k.ulice, mesto: k.mesto, psc: k.psc, email: k.email, telefon: k.telefon } : {},
-    stav: $('#d-stav').value,
-    datum_vystaveni: $('#d-vystaveni').value || dnes(),
-    datum_splatnosti: $('#d-splatnost').value || null,
-    datum_plneni: $('#d-plneni').value || null,
-    variabilni_symbol: $('#d-vs').value.trim() || null,
-    zpusob_platby: $('#d-platba').value || null,
-    uvod: $('#d-uvod').value.trim() || null,
-    poznamka: $('#d-poznamka').value.trim() || null,
-    misto_plneni: $('#d-misto').value.trim() || null,
-    termin_od: $('#d-od').value || null,
-    termin_do: $('#d-do').value || null,
-    zaruka_mesice: cislo($('#d-zaruka').value),
-    zaloha_pct: cislo($('#d-zaloha').value),
-    smluvni_text: $('#d-text').value.trim() || null
-  };
-  $('#d-ulozit').disabled = true;
-  const { error } = await sb.from('doklady').update(z).eq('id', stav.doklad.id);
-  if (error) { $('#d-ulozit').disabled = false; toast('Uložení selhalo: ' + prelozChybu(error), true); return false; }
-
-  await sb.from('polozky_dokladu').delete().eq('doklad_id', stav.doklad.id);
-  const radky = stav.polozky
-    .filter(p => (p.nazev || '').trim())
-    .map((p, i) => ({
-      doklad_id: stav.doklad.id, poradi: i, cenik_id: p.cenik_id || null, katalog_id: p.katalog_id || null,
-      typ: p.typ || 'ostatni', nazev: p.nazev.trim(), mj: p.mj || null,
-      mnozstvi: Number(p.mnozstvi) || 0, cena_bez_dph: Number(p.cena_bez_dph) || 0,   // mnozstviPozor je jen pro zobrazení
-      sleva_pct: Number(p.sleva_pct) || 0, sazba_dph: Number(p.sazba_dph) || 0, poznamka: p.poznamka || null
-    }));
-  if (radky.length) {
-    const { error: e2 } = await sb.from('polozky_dokladu').insert(radky);
-    if (e2) { $('#d-ulozit').disabled = false; toast('Položky se neuložily: ' + prelozChybu(e2), true); return false; }
-  }
-  $('#d-ulozit').disabled = false;
-  const { data } = await sb.from('doklady').select('*').eq('id', stav.doklad.id).single();
-  if (data) stav.doklad = data;
-  if (!tise) toast('Doklad uložen.');
-  nactiDoklady();
-  return true;
-}
-
-$('#d-smazat').addEventListener('click', async () => {
-  if (!stav.doklad || !confirm('Opravdu smazat doklad ' + stav.doklad.cislo + '?')) return;
-  const { error } = await sb.from('doklady').delete().eq('id', stav.doklad.id);
-  if (error) return toast('Smazání selhalo: ' + prelozChybu(error), true);
-  stav.doklad = null; toast('Doklad smazán.'); await nactiDoklady(); prepniTab('doklady');
-});
-
-$('#d-na-fakturu').addEventListener('click', async () => {
-  if (!(await ulozDoklad(true))) return;
-  await doCeniku();
-  await novyDoklad('faktura', {
-    kontakt_id: stav.doklad.kontakt_id, odberatel: stav.doklad.odberatel,
-    uvod: stav.doklad.uvod, poznamka: stav.doklad.poznamka, polozky: stav.polozky
-  });
-  toast('Faktura vystavená z nabídky.');
-});
-
-/* ================= KALKULAČKY SPOTŘEBY ================= */
-/* Dva režimy: „Jednoduše“ ukáže jen rozměry, „Podrobně“ odkryje spotřeby,
-   prořezy, spáry a rozteče. Každý výsledek nese výpočet, ze kterého vyšel.  */
-
-const ks3 = n => Number(n).toLocaleString('cs-CZ', { maximumFractionDigits: 3 });
-const P = true;   // pole jen pro režim Podrobně
-
-const KALK = {
-  zdivo: {
-    nazev: 'Zdivo', ikona: '🧱', schema: 'stena', otvory: true,
-    popis: 'Tvárnice, cihly i tvárnice ztraceného bednění. Rozměr převezmeš z katalogu nebo zvolíš šablonou.',
-    sablony: [
-      { n: 'Ytong 7,5', h: { td: 60, tv: 25, tl: 7.5, malta: 'tenka', spara: 1 } },
-      { n: 'Ytong 15', h: { td: 60, tv: 25, tl: 15, malta: 'tenka', spara: 1 } },
-      { n: 'Ytong 30', h: { td: 60, tv: 25, tl: 30, malta: 'tenka', spara: 1 } },
-      { n: 'Porotherm 30', h: { td: 25, tv: 24.9, tl: 30, malta: 'tenka', spara: 1 } },
-      { n: 'Cihla plná', h: { td: 29, tv: 6.5, tl: 14, malta: 'klasicka', spara: 12 } }
-    ],
-    pole: [
-      { id: 'delka', popis: 'Délka stěny', mj: 'm', v: '', tip: 'Součet délek všech stěn, které zdíš ze stejného materiálu.' },
-      { id: 'vyska', popis: 'Výška stěny', mj: 'm', v: '', tip: 'Od podlahy po strop. Obvykle 2,6 až 2,8 m.' },
-      { id: 'td', popis: 'Tvárnice – délka', mj: 'cm', v: '60', tip: 'Delší rozměr viditelné strany.' },
-      { id: 'tv', popis: 'Tvárnice – výška', mj: 'cm', v: '25', tip: 'Kratší rozměr viditelné strany.' },
-      { id: 'tl', popis: 'Tloušťka zdiva', mj: 'cm', v: '15', tip: 'Ovlivní spotřebu malty, ne počet kusů.' },
-      { id: 'malta', popis: 'Pojivo', typ: 'select', v: 'tenka', profi: P,
-        volby: [['tenka', 'Tenkovrstvá malta'], ['klasicka', 'Klasická malta'], ['pena', 'Zdicí pěna']],
-        tip: 'Tenkovrstvá je lepidlo na přesné tvárnice, klasická se dělá na 12 mm spáru.' },
-      { id: 'spara', popis: 'Spára', mj: 'mm', v: '1', profi: P, tip: 'U přesných tvárnic 1 mm, u klasického zdění 12 mm.' },
-      { id: 'prorez', popis: 'Prořez', mj: '%', v: '5', profi: P, tip: 'Rezerva na řezání a rozbité kusy. U členité stěny dej 10 %.' },
-      { id: 'vyztuz', popis: 'Výztuž do ložné spáry po', mj: 'řadách', v: '0', profi: P, tip: '0 = bez výztuže. Jinak počet řad mezi výztužemi, běžně 3.' }
-    ],
-    jak: 'Plocha = délka × výška − otvory.\nKusů na m² = 1 / ((délka + spára) × (výška + spára)).\nTenkovrstvá malta: 1,6 kg na m² zdiva na každých 10 cm tloušťky.\nKlasická malta: 12 % objemu zdiva, hustota 1 900 kg/m³.\nZdicí pěna: 1 dóza na 10 m² zdiva.\nVýsledek se navyšuje o prořez.',
-    spocitej(h) {
-      const plocha = h.plocha;
-      if (!plocha || !h.td || !h.tv) return null;
-      const sp = (h.spara || 0) / 10;
-      const naM2 = 1 / (((h.td + sp) / 100) * ((h.tv + sp) / 100));
-      const ks = Math.ceil(plocha * naM2 * (1 + (h.prorez || 0) / 100));
-      const r = [{ klic: 'tvarnice', nazev: 'Tvárnice nebo cihly', mnozstvi: ks, mj: 'ks',
-        zaklad: `${ks3(plocha)} m² zdiva, ${ks3(zaokr(naM2))} ks/m², prořez ${ks3(h.prorez || 0)} %` }];
-
-      const tl = h.tl || 15;
-      if (h.malta === 'klasicka') {
-        const m3 = plocha * (tl / 100) * 0.12;
-        r.push({ klic: 'malta', nazev: 'Zdicí malta', mnozstvi: Math.ceil(m3 * 1900), mj: 'kg',
-          zaklad: `12 % objemu zdiva (${ks3(zaokr(m3 * 1000) / 1000)} m³), 1 900 kg/m³` });
-      } else if (h.malta === 'pena') {
-        r.push({ klic: 'pena', nazev: 'Zdicí pěna', mnozstvi: Math.ceil(plocha / 10), mj: 'ks',
-          zaklad: '1 dóza na 10 m² zdiva' });
-      } else {
-        r.push({ klic: 'malta', nazev: 'Tenkovrstvá malta', mnozstvi: Math.ceil(plocha * 1.6 * (tl / 10)), mj: 'kg',
-          zaklad: `1,6 kg/m² na 10 cm tloušťky, zeď ${ks3(tl)} cm` });
-      }
-      if (h.vyztuz > 0) {
-        const rady = Math.floor((h.vyska || 0) * 100 / (h.tv || 25));
-        const bm = Math.ceil(rady / h.vyztuz) * (h.delka || 0);
-        if (bm > 0) r.push({ klic: 'vyztuz', nazev: 'Výztuž do ložné spáry', mnozstvi: Math.ceil(bm), mj: 'bm',
-          zaklad: `${rady} řad, výztuž každou ${ks3(h.vyztuz)}. řadu` });
-      }
-      return { radky: r };
-    }
-  },
-
-  sdk: {
-    nazev: 'Sádrokarton', ikona: '🔲', schema: 'stena', otvory: true,
-    popis: 'Příčky, předstěny i podhledy. Vyber opláštění, záklop a osovou vzdálenost, zbytek dopočítám.',
-    sablony: [
-      { n: 'Příčka W111', h: { konstrukce: 'pricka', strany: 'obe', zaklop: 'jednoduchy', rozten: 625, izolace: 1 } },
-      { n: 'Příčka W112 (dvojitý záklop)', h: { konstrukce: 'pricka', strany: 'obe', zaklop: 'dvojity', rozten: 625, izolace: 1 } },
-      { n: 'Příčka do vlhka / obklad', h: { konstrukce: 'pricka', strany: 'obe', zaklop: 'dvojity', rozten: 400, izolace: 1 } },
-      { n: 'Předstěna', h: { konstrukce: 'predstena', strany: 'jedna', zaklop: 'jednoduchy', rozten: 625, izolace: 1 } },
-      { n: 'Podhled', h: { konstrukce: 'podhled', strany: 'jedna', zaklop: 'jednoduchy', rozten: 500, izolace: 0 } }
-    ],
-    pole: [
-      { id: 'delka', popis: 'Délka / šířka', mj: 'm', v: '', tip: 'U podhledu zadej šířku místnosti.' },
-      { id: 'vyska', popis: 'Výška / hloubka', mj: 'm', v: '2,6', tip: 'U podhledu zadej délku místnosti.' },
-      { id: 'konstrukce', popis: 'Konstrukce', typ: 'select', v: 'pricka',
-        volby: [['pricka', 'Příčka'], ['predstena', 'Předstěna'], ['podhled', 'Podhled']] },
-      { id: 'strany', popis: 'Opláštění', typ: 'select', v: 'obe',
-        volby: [['obe', 'Z obou stran'], ['jedna', 'Jen z jedné strany']],
-        tip: 'Příčka se obvykle opláští z obou stran, předstěna a podhled jen z jedné.' },
-      { id: 'zaklop', popis: 'Záklop', typ: 'select', v: 'jednoduchy',
-        volby: [['jednoduchy', 'Jednoduchý (1 deska)'], ['dvojity', 'Dvojitý (2 desky přes sebe)']],
-        tip: 'Dvojitý záklop se dělá kvůli požární odolnosti, akustice a pevnějšímu kotvení.' },
-      { id: 'rozten', popis: 'Osová vzdálenost profilů', typ: 'select', v: '625',
-        volby: [['625', '625 mm – standard'], ['500', '500 mm – podhledy'], ['400', '400 mm – obklad a zátěž'], ['300', '300 mm – těžká zátěž']],
-        tip: 'Čím menší vzdálenost, tím víc profilů. Pod obklad se dává 400 mm.' },
-      { id: 'dd', popis: 'Deska – šířka', mj: 'm', v: '1,25', profi: P },
-      { id: 'dv', popis: 'Deska – délka', mj: 'm', v: '2,6', profi: P },
-      { id: 'prorez', popis: 'Prořez', mj: '%', v: '10', profi: P },
-      { id: 'izolace', popis: 'Izolace (1 = ano)', v: '1', profi: P, tip: 'Minerální vata do dutiny konstrukce.' },
-      { id: 'vyztuzotvoru', popis: 'Vyztužit otvory (1 = ano)', v: '1', profi: P,
-        tip: 'Kolem dveří a oken se dávají UA profily s kotvami, aby konstrukce nepracovala.' }
-    ],
-    jak: 'Plocha = délka × výška − otvory.\nVrstev desek = strany × záklop (obě strany + dvojitý záklop = 4 vrstvy).\nOpláštění = plocha × vrstvy × (1 + prořez).\nSvislé profily = délka / osová vzdálenost + 1.\nVodorovné profily = 2 × délka, u podhledu obvod místnosti.\nŠrouby: první vrstva 12 ks/m² (rozteč 750 mm), pohledová vrstva 25 ks/m² (rozteč 250 mm).\nTmel 0,4 kg/m² a páska 1,2 bm/m² se počítají jen z pohledové vrstvy.\nVýztuž otvoru: UA profil = 2 × výška + šířka otvoru, 4 kotvy na otvor.',
-    spocitej(h) {
-      const plocha = h.plocha;
-      if (!plocha || !h.dd || !h.dv) return null;
-      const podhled = h.konstrukce === 'podhled';
-      const stran = h.strany === 'obe' ? 2 : 1;
-      const vrstevNaStranu = h.zaklop === 'dvojity' ? 2 : 1;
-      const vrstvy = stran * vrstevNaStranu;
-      const prorez = 1 + (h.prorez || 0) / 100;
-      const opl = plocha * vrstvy * prorez;
-      const pohledova = plocha * stran;                       // jen finální vrstva
-      const rozten = Number(h.rozten || 625) / 1000;
-
-      const r = [
-        { klic: 'deska', nazev: 'Sádrokartonová deska', mnozstvi: Math.ceil(opl / (h.dd * h.dv)), mj: 'ks',
-          zaklad: `${ks3(zaokr(opl))} m² opláštění (${stran === 2 ? 'obě strany' : 'jedna strana'}, ${vrstevNaStranu === 2 ? 'dvojitý záklop' : 'jednoduchý záklop'}), deska ${ks3(zaokr(h.dd * h.dv))} m²` },
-        { klic: 'cw', nazev: podhled ? 'Profil CD (nosný)' : 'Profil CW (svislý)',
-          mnozstvi: Math.ceil((h.delka || 0) / rozten) + 1, mj: 'ks',
-          zaklad: `osová vzdálenost ${ks3(Number(h.rozten || 625))} mm na ${ks3(h.delka || 0)} m` },
-        { klic: 'uw', nazev: podhled ? 'Profil UD (obvodový)' : 'Profil UW (vodorovný)',
-          mnozstvi: Math.ceil(podhled ? 2 * ((h.delka || 0) + (h.vyska || 0)) : 2 * (h.delka || 0)), mj: 'bm',
-          zaklad: podhled ? 'obvod místnosti' : 'podlaha a strop' },
-        { klic: 'srouby', nazev: 'Šrouby do sádrokartonu',
-          mnozstvi: Math.ceil(pohledova * 25 + (vrstevNaStranu === 2 ? pohledova * 12 : 0)), mj: 'ks',
-          zaklad: vrstevNaStranu === 2
-            ? `spodní vrstva 12 ks/m² + pohledová 25 ks/m² na ${ks3(zaokr(pohledova))} m²`
-            : `25 ks/m² na ${ks3(zaokr(pohledova))} m²` },
-        { klic: 'tmel', nazev: 'Spárovací tmel', mnozstvi: Math.ceil(pohledova * 0.4), mj: 'kg',
-          zaklad: `0,4 kg/m² pohledové plochy` },
-        { klic: 'paska', nazev: 'Výztužná páska', mnozstvi: Math.ceil(pohledova * 1.2), mj: 'bm',
-          zaklad: `1,2 bm/m² pohledové plochy` }
-      ];
-
-      if (podhled) r.push({ klic: 'zaves', nazev: 'Přímý závěs', mnozstvi: Math.ceil(plocha * 2), mj: 'ks', zaklad: '2 ks/m²' });
-      if (h.izolace) r.push({ klic: 'izolace', nazev: 'Minerální izolace', mnozstvi: zaokr(plocha), mj: 'm²', zaklad: 'plocha konstrukce' });
-
-      const otvoru = (h.otvory || []).reduce((s, o) => s + (o.n || 0), 0);
-      if (h.vyztuzotvoru && otvoru) {
-        const bm = (h.otvory || []).reduce((s, o) => s + (2 * (o.v || 0) + (o.s || 0)) * (o.n || 0), 0);
-        r.push({ klic: 'ua', nazev: 'Výztužný profil UA k otvorům', mnozstvi: Math.ceil(bm), mj: 'bm',
-          zaklad: `${otvoru} ${otvoru === 1 ? 'otvor' : 'otvory'}: 2 × výška + šířka` });
-        r.push({ klic: 'kotvy', nazev: 'Kotvy UA profilu', mnozstvi: otvoru * 4, mj: 'ks', zaklad: '4 ks na otvor' });
-        r.push({ klic: 'preklad', nazev: 'Překlad nad otvorem (profil)', mnozstvi: Math.ceil((h.otvory || []).reduce((s, o) => s + (o.s || 0) * (o.n || 0) * 1.4, 0)), mj: 'bm',
-          zaklad: 'šířka otvoru + přesah 20 % na každou stranu' });
-      }
-
-      r.push({ klic: 'tesneni', nazev: 'Napojovací těsnicí páska',
-        mnozstvi: Math.ceil(podhled ? 2 * ((h.delka || 0) + (h.vyska || 0)) : 2 * (h.delka || 0) + 2 * (h.vyska || 0)), mj: 'bm',
-        zaklad: 'pod obvodové profily' });
-      return { radky: r };
-    }
-  },
-
-  plocha: {
-    nazev: 'Dlažba a obklad', ikona: '🟫', schema: 'dlazba', otvory: true,
-    popis: 'Dlaždice, obklady i velkoformáty. Spotřeba lepidla se řídí zvolenou zubovou stěrkou.',
-    sablony: [
-      { n: '30 × 60', h: { kd: 60, ksi: 30, spara: 3, tloustka: 9 } },
-      { n: '60 × 60', h: { kd: 60, ksi: 60, spara: 3, tloustka: 10 } },
-      { n: '20 × 25 obklad', h: { kd: 25, ksi: 20, spara: 2, tloustka: 7 } },
-      { n: '120 × 60 velkoformát', h: { kd: 120, ksi: 60, spara: 2, tloustka: 11, zub: 10 } }
-    ],
-    pole: [
-      { id: 'delka', popis: 'Délka plochy', mj: 'm', v: '' },
-      { id: 'sirka', popis: 'Šířka plochy', mj: 'm', v: '' },
-      { id: 'kd', popis: 'Dlaždice – délka', mj: 'cm', v: '60' },
-      { id: 'ksi', popis: 'Dlaždice – šířka', mj: 'cm', v: '30' },
-      { id: 'spara', popis: 'Šířka spáry', mj: 'mm', v: '3', profi: P, tip: 'Běžně 2 až 3 mm, u velkoformátů 2 mm.' },
-      { id: 'tloustka', popis: 'Tloušťka dlaždice', mj: 'mm', v: '9', profi: P, tip: 'Potřeba pro výpočet spárovací hmoty.' },
-      { id: 'zub', popis: 'Zubová stěrka', mj: 'mm', v: '8', profi: P, tip: '6 mm malý formát, 8 mm běžná dlažba, 10 mm velkoformát.' },
-      { id: 'prorez', popis: 'Prořez', mj: '%', v: '10', profi: P, tip: '10 % rovné kladení, 15 % diagonálně nebo do členité místnosti.' },
-      { id: 'sokl', popis: 'Sokl po obvodu (1 = ano)', v: '0', profi: P }
-    ],
-    jak: 'Plocha = délka × šířka − otvory, navýšená o prořez.\nPlocha dlaždice počítá i se spárou.\nLepidlo = tloušťka zubu × 1,4 kg/m².\nSpárovací hmota = (A + B) / (A × B) × šířka spáry × tloušťka × 1,6.\nSokl = obvod plochy.',
-    spocitej(h) {
-      const plocha = h.plocha;
-      if (!plocha) return null;
-      const sProrezem = plocha * (1 + (h.prorez || 0) / 100);
-      const r = [];
-      if (h.kd && h.ksi) {
-        const sp = (h.spara || 0) / 10;
-        const kus = ((h.kd + sp) / 100) * ((h.ksi + sp) / 100);
-        r.push({ klic: 'material', nazev: 'Dlažba nebo obklad', mnozstvi: Math.ceil(sProrezem / kus), mj: 'ks',
-          zaklad: `${ks3(zaokr(sProrezem))} m² s prořezem, kus se spárou ${ks3(zaokr(kus * 1000) / 1000)} m²` });
-        r.push({ klic: 'plochaM2', nazev: 'Dlažba – plocha k objednání', mnozstvi: zaokr(sProrezem), mj: 'm²',
-          zaklad: 'když se prodává na m²' });
-      } else {
-        r.push({ klic: 'material', nazev: 'Dlažba nebo obklad', mnozstvi: zaokr(sProrezem), mj: 'm²',
-          zaklad: `${ks3(plocha)} m² + prořez ${ks3(h.prorez || 0)} %` });
-      }
-      r.push({ klic: 'lepidlo', nazev: 'Lepidlo', mnozstvi: Math.ceil(plocha * (h.zub || 8) * 1.4), mj: 'kg',
-        zaklad: `zub ${ks3(h.zub || 8)} mm, 1,4 kg/m² na každý mm` });
-      if (h.kd && h.ksi && h.spara) {
-        const A = h.kd * 10, B = h.ksi * 10;
-        const naM2 = (A + B) / (A * B) * h.spara * (h.tloustka || 9) * 1.6;
-        r.push({ klic: 'spara', nazev: 'Spárovací hmota', mnozstvi: Math.max(1, Math.ceil(plocha * naM2)), mj: 'kg',
-          zaklad: `${ks3(zaokr(naM2 * 100) / 100)} kg/m² podle rozměru, spáry a tloušťky` });
-      }
-      r.push({ klic: 'krizky', nazev: 'Spárovací křížky', mnozstvi: Math.ceil(plocha * 12), mj: 'ks', zaklad: '12 ks/m²' });
-      if (h.sokl) r.push({ klic: 'soklovky', nazev: 'Sokl', mnozstvi: Math.ceil(2 * ((h.delka || 0) + (h.sirka || 0))), mj: 'bm', zaklad: 'obvod plochy' });
-      return { radky: r };
-    }
-  },
-
-  objem: {
-    nazev: 'Beton a potěr', ikona: '🪣', schema: 'deska', otvory: false,
-    popis: 'Potěry, mazaniny, základy i zásypy. Spočítá pytle i suroviny na míchání.',
-    sablony: [
-      { n: 'Potěr 5 cm', h: { tloustka: 5, rezerva: 5, forma: 'pytle', vydatnost: 12.5 } },
-      { n: 'Mazanina 10 cm', h: { tloustka: 10, rezerva: 5, forma: 'michany' } },
-      { n: 'Základ 40 cm', h: { tloustka: 40, rezerva: 10, forma: 'michany' } }
-    ],
-    pole: [
-      { id: 'delka', popis: 'Délka', mj: 'm', v: '' },
-      { id: 'sirka', popis: 'Šířka', mj: 'm', v: '' },
-      { id: 'tloustka', popis: 'Tloušťka', mj: 'cm', v: '5' },
-      { id: 'forma', popis: 'Z čeho', typ: 'select', v: 'pytle',
-        volby: [['pytle', 'Hotová směs v pytlích'], ['michany', 'Míchaný beton na místě']] },
-      { id: 'vydatnost', popis: 'Vydatnost pytle', mj: 'l', v: '12,5', profi: P, tip: 'Pytel 25 kg dá zhruba 12,5 litru čerstvé směsi.' },
-      { id: 'rezerva', popis: 'Rezerva', mj: '%', v: '5', profi: P, tip: 'Na nerovné podloží dej 10 %.' },
-      { id: 'kari', popis: 'Kari síť (1 = ano)', v: '0', profi: P }
-    ],
-    jak: 'Objem = plocha × tloušťka, navýšený o rezervu.\nPytle = objem v litrech / vydatnost pytle.\nMíchaný beton C20/25 na 1 m³: 320 kg cementu, 0,65 m³ písku, 0,65 m³ štěrku, 160 l vody.\nKari síť se počítá s přesahem 10 %.',
-    spocitej(h) {
-      const plochaM2 = (h.delka || 0) * (h.sirka || 0);
-      const objem = plochaM2 * ((h.tloustka || 0) / 100) * (1 + (h.rezerva || 0) / 100);
-      if (!objem) return null;
-      const r = [{ klic: 'objem', nazev: 'Směs celkem', mnozstvi: zaokr(objem), mj: 'm³',
-        zaklad: `${ks3(plochaM2)} m² × ${ks3(h.tloustka || 0)} cm, rezerva ${ks3(h.rezerva || 0)} %` }];
-      if (h.forma === 'michany') {
-        r.push({ klic: 'cement', nazev: 'Cement', mnozstvi: Math.ceil(objem * 320), mj: 'kg', zaklad: '320 kg na m³ betonu C20/25' });
-        r.push({ klic: 'pisek', nazev: 'Písek', mnozstvi: zaokr(objem * 0.65), mj: 'm³', zaklad: '0,65 m³ na m³' });
-        r.push({ klic: 'sterk', nazev: 'Štěrk', mnozstvi: zaokr(objem * 0.65), mj: 'm³', zaklad: '0,65 m³ na m³' });
-        r.push({ klic: 'voda', nazev: 'Voda', mnozstvi: Math.ceil(objem * 160), mj: 'l', zaklad: '160 l na m³' });
-      } else if (h.vydatnost) {
-        r.push({ klic: 'pytle', nazev: 'Pytle směsi', mnozstvi: Math.ceil(objem * 1000 / h.vydatnost), mj: 'ks',
-          zaklad: `${ks3(Math.round(objem * 1000))} l / ${ks3(h.vydatnost)} l na pytel` });
-      }
-      if (h.kari) r.push({ klic: 'kari', nazev: 'Kari síť', mnozstvi: zaokr(plochaM2 * 1.1), mj: 'm²', zaklad: 'plocha + 10 % přesah' });
-      return { radky: r };
-    }
-  },
-
-  malba: {
-    nazev: 'Malba', ikona: '🎨', schema: 'stena', otvory: true,
-    popis: 'Vnitřní malby včetně penetrace. Počítá litry i počet balení.',
-    sablony: [
-      { n: 'Nová omítka', h: { natery: 2, vydatnost: 8, penetrace: 1 } },
-      { n: 'Přemalování', h: { natery: 1, vydatnost: 9, penetrace: 0 } },
-      { n: 'Sytá barva', h: { natery: 3, vydatnost: 7, penetrace: 1 } }
-    ],
-    pole: [
-      { id: 'delka', popis: 'Obvod místnosti', mj: 'm', v: '', tip: 'Sečti délky všech stěn dokola.' },
-      { id: 'vyska', popis: 'Výška stěn', mj: 'm', v: '2,6' },
-      { id: 'strop', popis: 'Plocha stropu', mj: 'm²', v: '0', tip: 'Necháš 0, pokud strop nemaluješ.' },
-      { id: 'natery', popis: 'Počet nátěrů', v: '2' },
-      { id: 'vydatnost', popis: 'Vydatnost barvy', mj: 'm²/l', v: '8', profi: P, tip: 'Najdeš na obalu, obvykle 7 až 10 m²/l v jedné vrstvě.' },
-      { id: 'penetrace', popis: 'Penetrace (1 = ano)', v: '1', profi: P },
-      { id: 'baleni', popis: 'Velikost balení', mj: 'l', v: '10', profi: P }
-    ],
-    jak: 'Plocha = obvod × výška − otvory + strop.\nBarva = plocha × počet nátěrů / vydatnost.\nPenetrace = plocha / 10 m² na litr.\nBalení se zaokrouhluje nahoru.',
-    spocitej(h) {
-      const plocha = (h.plocha || 0) + (h.strop || 0);
-      if (!plocha) return null;
-      const litry = plocha * (h.natery || 1) / (h.vydatnost || 8);
-      const r = [
-        { klic: 'barva', nazev: 'Malířská barva', mnozstvi: zaokr(litry), mj: 'l',
-          zaklad: `${ks3(zaokr(plocha))} m² × ${ks3(h.natery || 1)} nátěry / ${ks3(h.vydatnost || 8)} m² na litr` },
-        { klic: 'baleni', nazev: `Balení barvy po ${ks3(h.baleni || 10)} l`, mnozstvi: Math.ceil(litry / (h.baleni || 10)), mj: 'ks',
-          zaklad: 'zaokrouhleno nahoru' }
-      ];
-      if (h.penetrace) r.push({ klic: 'penetrace', nazev: 'Penetrace', mnozstvi: zaokr(plocha / 10), mj: 'l', zaklad: '10 m² na litr' });
-      r.push({ klic: 'krycka', nazev: 'Zakrývací fólie', mnozstvi: Math.ceil(plocha * 0.3), mj: 'm²', zaklad: '30 % plochy' });
-      r.push({ klic: 'paska', nazev: 'Malířská páska', mnozstvi: Math.ceil((h.delka || 0) * 2), mj: 'bm', zaklad: 'podlaha a strop' });
-      return { radky: r };
-    }
-  },
-
-  fasada: {
-    nazev: 'Zateplení', ikona: '🏠', schema: 'stena', otvory: true,
-    popis: 'Kontaktní zateplení fasády od lepidla po omítku, včetně hmoždinek a lišt.',
-    sablony: [
-      { n: 'EPS 14 cm', h: { tl: 14, hmozdinky: 6, omitka: 3.5 } },
-      { n: 'EPS 20 cm', h: { tl: 20, hmozdinky: 8, omitka: 3.5 } },
-      { n: 'Minerální vata 16 cm', h: { tl: 16, hmozdinky: 8, omitka: 4 } }
-    ],
-    pole: [
-      { id: 'delka', popis: 'Délka fasády', mj: 'm', v: '' },
-      { id: 'vyska', popis: 'Výška fasády', mj: 'm', v: '' },
-      { id: 'tl', popis: 'Tloušťka izolantu', mj: 'cm', v: '14' },
-      { id: 'hmozdinky', popis: 'Hmoždinek na m²', v: '6', profi: P, tip: '6 ks v ploše, 8 ks na rozích a u vyšších budov.' },
-      { id: 'omitka', popis: 'Spotřeba omítky', mj: 'kg/m²', v: '3,5', profi: P, tip: 'Podle zrnitosti, obvykle 2,5 až 4,5 kg/m².' },
-      { id: 'lista', popis: 'Zakládací lišta (1 = ano)', v: '1', profi: P }
-    ],
-    jak: 'Plocha = délka × výška − otvory.\nLepidlo na desky 5 kg/m², stěrka 5 kg/m².\nPerlinka = plocha + 10 % na přesahy.\nPenetrace 0,2 l/m², omítka podle zadané spotřeby.\nRohovníky se počítají z obvodu otvorů a nároží.',
-    spocitej(h) {
-      const plocha = h.plocha;
-      if (!plocha) return null;
-      const obvodOtvoru = (h.otvory || []).reduce((s, o) => s + 2 * (o.s + o.v) * o.n, 0);
-      return { radky: [
-        { klic: 'izolant', nazev: `Izolant tl. ${ks3(h.tl || 14)} cm`, mnozstvi: zaokr(plocha * 1.02), mj: 'm²', zaklad: 'plocha + 2 % prořez' },
-        { klic: 'lepidlo', nazev: 'Lepidlo na desky', mnozstvi: Math.ceil(plocha * 5), mj: 'kg', zaklad: '5 kg/m²' },
-        { klic: 'hmozdinky', nazev: 'Talířové hmoždinky', mnozstvi: Math.ceil(plocha * (h.hmozdinky || 6)), mj: 'ks',
-          zaklad: `${ks3(h.hmozdinky || 6)} ks/m²` },
-        { klic: 'sterka', nazev: 'Stěrková hmota', mnozstvi: Math.ceil(plocha * 5), mj: 'kg', zaklad: '5 kg/m²' },
-        { klic: 'perlinka', nazev: 'Sklotextilní perlinka', mnozstvi: Math.ceil(plocha * 1.1), mj: 'm²', zaklad: 'plocha + 10 % přesahy' },
-        { klic: 'penetrace', nazev: 'Penetrace pod omítku', mnozstvi: zaokr(plocha * 0.2), mj: 'l', zaklad: '0,2 l/m²' },
-        { klic: 'omitka', nazev: 'Silikonová omítka', mnozstvi: Math.ceil(plocha * (h.omitka || 3.5)), mj: 'kg', zaklad: `${ks3(h.omitka || 3.5)} kg/m²` },
-        ...(h.lista ? [{ klic: 'lista', nazev: 'Zakládací lišta', mnozstvi: Math.ceil(h.delka || 0), mj: 'bm', zaklad: 'délka fasády' }] : []),
-        ...(obvodOtvoru ? [{ klic: 'rohovnik', nazev: 'Rohovník s perlinkou', mnozstvi: Math.ceil(obvodOtvoru), mj: 'bm', zaklad: 'obvod otvorů' }] : [])
-      ] };
-    }
-  }
-};
-
-/* ---------- stav kalkulaček ---------- */
-let kalkDruh = 'zdivo', kalkRezim = 'laik', kalkTipy = false;
-let kalkOtvory = [], kalkRadky = [];
-
-/* ---------- nákresy ---------- */
-function svgStena(h) {
-  const d = h.delka || 0, v = h.vyska || 0;
-  if (!d || !v) return '<p class="napoveda" style="margin:0">Zadej rozměry a nakreslím náhled.</p>';
-  const W = 600, okraj = 42, sirka = W - 2 * okraj;
-  const vyska = Math.max(70, Math.min(230, sirka * v / d));
-  const m = sirka / d;
-  let x = okraj + 14, otv = '';
-  (h.otvory || []).forEach(o => {
-    for (let i = 0; i < o.n; i++) {
-      const ow = o.s * m, oh = Math.min(o.v * m, vyska - 6);
-      if (x + ow > okraj + sirka - 10) break;
-      otv += `<rect x="${x}" y="${okraj + vyska - oh}" width="${ow}" height="${oh}" fill="#fff" stroke="var(--inkoust)" stroke-width="1.5"/>
-              <text x="${x + ow / 2}" y="${okraj + vyska - oh / 2}" font-size="11" text-anchor="middle" fill="var(--ocel)">${ks3(o.s)}×${ks3(o.v)}</text>`;
-      x += ow + 16;
-    }
-  });
-  return `<svg viewBox="0 0 ${W} ${vyska + 2 * okraj}" role="img" aria-label="Náhled stěny">
-    <rect x="${okraj}" y="${okraj}" width="${sirka}" height="${vyska}" fill="#F0F1EE" stroke="var(--inkoust)" stroke-width="2"/>
-    ${otv}
-    <line x1="${okraj}" y1="${okraj + vyska + 18}" x2="${okraj + sirka}" y2="${okraj + vyska + 18}" stroke="var(--inkoust)" stroke-width="1.5" marker-start="url(#s)" marker-end="url(#s)"/>
-    <text x="${okraj + sirka / 2}" y="${okraj + vyska + 34}" font-size="13" text-anchor="middle" font-weight="600">${ks3(d)} m</text>
-    <line x1="${okraj - 18}" y1="${okraj}" x2="${okraj - 18}" y2="${okraj + vyska}" stroke="var(--inkoust)" stroke-width="1.5" marker-start="url(#s)" marker-end="url(#s)"/>
-    <text x="${okraj - 24}" y="${okraj + vyska / 2}" font-size="13" text-anchor="middle" font-weight="600" transform="rotate(-90 ${okraj - 24} ${okraj + vyska / 2})">${ks3(v)} m</text>
-    <defs><marker id="s" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
-      <path d="M1,1 L7,4 L1,7" fill="none" stroke="var(--inkoust)" stroke-width="1.3"/></marker></defs>
-  </svg>`;
-}
-
-function svgDlazba(h) {
-  const d = h.delka || 0, s = h.sirka || 0;
-  if (!d || !s) return '<p class="napoveda" style="margin:0">Zadej rozměry a nakreslím náhled.</p>';
-  const W = 600, okraj = 42, sirka = W - 2 * okraj;
-  const vyska = Math.max(70, Math.min(230, sirka * s / d));
-  const m = sirka / d;
-  const kd = (h.kd || 0) / 100 * m, ksi = (h.ksi || 0) / 100 * m;
-  let dlazdice = '';
-  if (kd > 3 && ksi > 3 && (d / (h.kd / 100)) * (s / (h.ksi / 100)) < 600) {
-    for (let y = 0; y < vyska - 1; y += ksi)
-      for (let x = 0; x < sirka - 1; x += kd)
-        dlazdice += `<rect x="${okraj + x}" y="${okraj + y}" width="${Math.min(kd, sirka - x) - 1}" height="${Math.min(ksi, vyska - y) - 1}" fill="#fff" stroke="#C9CEC7"/>`;
-  }
-  return `<svg viewBox="0 0 ${W} ${vyska + 2 * okraj}" role="img" aria-label="Náhled plochy">
-    <rect x="${okraj}" y="${okraj}" width="${sirka}" height="${vyska}" fill="#EEF0EC"/>
-    ${dlazdice}
-    <rect x="${okraj}" y="${okraj}" width="${sirka}" height="${vyska}" fill="none" stroke="var(--inkoust)" stroke-width="2"/>
-    <text x="${okraj + sirka / 2}" y="${okraj + vyska + 26}" font-size="13" text-anchor="middle" font-weight="600">${ks3(d)} m</text>
-    <text x="${okraj - 14}" y="${okraj + vyska / 2}" font-size="13" text-anchor="middle" font-weight="600" transform="rotate(-90 ${okraj - 14} ${okraj + vyska / 2})">${ks3(s)} m</text>
-  </svg>`;
-}
-
-function svgDeska(h) {
-  const d = h.delka || 0, s = h.sirka || 0, t = h.tloustka || 0;
-  if (!d || !s) return '<p class="napoveda" style="margin:0">Zadej rozměry a nakreslím náhled.</p>';
-  const W = 600, x0 = 60, sirka = 420, vyska = 90, hloubka = 34;
-  return `<svg viewBox="0 0 ${W} 200" role="img" aria-label="Náhled desky">
-    <polygon points="${x0},${60} ${x0 + sirka},${60} ${x0 + sirka + hloubka},${60 - hloubka} ${x0 + hloubka},${60 - hloubka}" fill="#E4E7E2" stroke="var(--inkoust)" stroke-width="1.5"/>
-    <rect x="${x0}" y="60" width="${sirka}" height="${vyska / 2}" fill="#F0F1EE" stroke="var(--inkoust)" stroke-width="2"/>
-    <polygon points="${x0 + sirka},${60} ${x0 + sirka + hloubka},${60 - hloubka} ${x0 + sirka + hloubka},${60 - hloubka + vyska / 2} ${x0 + sirka},${60 + vyska / 2}" fill="#E4E7E2" stroke="var(--inkoust)" stroke-width="1.5"/>
-    <text x="${x0 + sirka / 2}" y="${60 + vyska / 2 + 22}" font-size="13" text-anchor="middle" font-weight="600">${ks3(d)} m</text>
-    <text x="${x0 + sirka + hloubka + 30}" y="${60 + vyska / 4}" font-size="13" text-anchor="middle" font-weight="600">${ks3(t)} cm</text>
-    <text x="${x0 + sirka / 2 + hloubka}" y="${60 - hloubka - 8}" font-size="13" text-anchor="middle" font-weight="600">${ks3(s)} m</text>
-  </svg>`;
-}
-
-/* ---------- vykreslení ovládání ---------- */
-function vykresliDruhy() {
-  $('#kl-druhy').innerHTML = Object.entries(KALK).map(([k, v]) =>
-    `<button class="chip${k === kalkDruh ? ' aktivni' : ''}" type="button" data-druh="${k}">${v.ikona} ${esc(v.nazev)}</button>`).join('');
-}
-
-function vykresliSablony() {
-  const k = KALK[kalkDruh];
-  $('#kl-sablony').innerHTML = (k.sablony || []).map((s, i) =>
-    `<button class="chip chip-metr" type="button" data-sablona="${i}">${esc(s.n)}</button>`).join('')
-    + (k.schema === 'stena' && kalkDruh !== 'malba' || kalkDruh === 'plocha'
-      ? '<button class="chip" type="button" id="kl-material">📐 Rozměry z katalogu</button>' : '');
-}
-
-function vykresliVstupy(zachovat = true) {
-  const k = KALK[kalkDruh];
-  const stare = zachovat ? hodnotySyrove() : {};
-  $('#kl-popis').textContent = k.popis;
-  $('#kl-vstupy').innerHTML = '<div class="mrizka">' + k.pole
-    .filter(f => !f.profi || kalkRezim === 'profi')
-    .map(f => {
-      const hod = stare[f.id] !== undefined ? stare[f.id] : f.v;
-      const vstup = f.typ === 'select'
-        ? `<select class="pole" data-pole="${f.id}" data-typ="select" id="kl-${f.id}">${f.volby.map(([v, p]) =>
-            `<option value="${v}"${String(hod) === v ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select>`
-        : `<div class="pole-mj"><input id="kl-${f.id}" class="pole" data-pole="${f.id}" inputmode="decimal" value="${esc(hod)}"
-             ${f.mj ? 'style="padding-right:3rem"' : ''}>${f.mj ? `<span class="jednotka">${esc(f.mj)}</span>` : ''}</div>`;
-      return `<div class="radek"><label for="kl-${f.id}">${esc(f.popis)}</label>${vstup}
-        ${f.tip ? `<p class="tip${kalkTipy ? '' : ' skryt'}">${esc(f.tip)}</p>` : ''}</div>`;
-    }).join('') + '</div>';
-  $('#kl-otvory-blok').classList.toggle('skryt', !k.otvory);
-  $('#kl-jak').textContent = k.jak;
-  vykresliOtvory();
-  vykresliSablony();
-  prepocitej();
-}
-
-function vykresliOtvory() {
-  $('#kl-otvory').innerHTML = kalkOtvory.map((o, i) => `
-    <div class="otvor">
-      <div class="pole-mj"><input class="pole" data-otvor-s="${i}" inputmode="decimal" value="${vPole(o.s)}" style="padding-right:2.2rem" aria-label="Šířka otvoru"><span class="jednotka">m</span></div>
-      <div class="pole-mj"><input class="pole" data-otvor-v="${i}" inputmode="decimal" value="${vPole(o.v)}" style="padding-right:2.2rem" aria-label="Výška otvoru"><span class="jednotka">m</span></div>
-      <div class="pole-mj"><input class="pole" data-otvor-n="${i}" inputmode="numeric" value="${o.n}" style="padding-right:2rem" aria-label="Počet"><span class="jednotka">ks</span></div>
-      <button class="btn btn-tichy btn-maly" type="button" data-otvor-smazat="${i}" aria-label="Odebrat otvor">×</button>
-    </div>`).join('');
-}
-
-function hodnotySyrove() {
-  const h = {};
-  $$('#kl-vstupy [data-pole]').forEach(i => { h[i.dataset.pole] = i.value; });
-  return h;
-}
-
-function hodnoty() {
-  const k = KALK[kalkDruh], h = {};
-  k.pole.forEach(f => { h[f.id] = f.typ === 'select' ? f.v : (cislo(f.v) ?? 0); });   // výchozí i pro skrytá pole
-  $$('#kl-vstupy [data-pole]').forEach(i => {
-    h[i.dataset.pole] = i.dataset.typ === 'select' ? i.value : (cislo(i.value) ?? 0);
-  });
-  h.otvory = kalkOtvory.slice();
-  h.plochaOtvoru = kalkOtvory.reduce((s, o) => s + (o.s || 0) * (o.v || 0) * (o.n || 0), 0);
-  const zaklad = kalkDruh === 'plocha' ? (h.delka || 0) * (h.sirka || 0) : (h.delka || 0) * (h.vyska || 0);
-  h.plocha = Math.max(0, zaklad - (k.otvory ? h.plochaOtvoru : 0));
-  return h;
-}
-
-function prepocitej() {
-  const k = KALK[kalkDruh], h = hodnoty();
-  $('#kl-schema').innerHTML = k.schema === 'dlazba' ? svgDlazba(h) : k.schema === 'deska' ? svgDeska(h) : svgStena(h);
-  const v = k.spocitej(h);
-  const stare = Object.fromEntries(kalkRadky.filter(r => r.material).map(r => [r.klic, r.material]));
-  kalkRadky = v ? v.radky.map(r => ({ ...r, material: stare[r.klic] || null })) : [];
-  vykresliVysledek(h);
-}
-
-function vykresliVysledek(h) {
-  const el = $('#kl-vysledek');
-  if (!kalkRadky.length) { el.innerHTML = '<div class="prazdno">Vyplň rozměry a spočítám množství.</div>'; return; }
-  let hmotnost = 0, palety = [];
-  kalkRadky.forEach(r => {
-    const k = r.material?.katalog_id && stav.katalogCeny[r.material.katalog_id];
-    if (k?.hmotnost_mj) hmotnost += k.hmotnost_mj * r.mnozstvi;
-    if (k?.pocet_na_palete) palety.push(`${r.nazev}: ${ks3(zaokr(r.mnozstvi / k.pocet_na_palete * 100) / 100)} palety`);
-  });
-  const cena = kalkRadky.reduce((s, r) => s + (r.material ? r.material.cena * r.mnozstvi : 0), 0);
-  el.innerHTML = kalkRadky.map((r, i) => {
-    const k = r.material?.katalog_id && stav.katalogCeny[r.material.katalog_id];
-    const naPalete = k?.pocet_na_palete;
-    return `<div class="kalk-radek">
-      <div><span class="p-nazev">${esc(r.material ? r.material.nazev : r.nazev)}</span>
-        <span class="p-meta" style="display:block">${esc(r.zaklad)}${r.material ? ', ' + kc(r.material.cena) + '/' + esc(r.material.mj || r.mj) : ', bez materiálu'}</span></div>
-      <div class="kalk-mn">${ks3(r.mnozstvi)}</div>
-      <div class="kalk-mj p-meta">${esc(r.material?.mj || r.mj)}</div>
-      <div style="display:flex;gap:.3rem">
-        ${naPalete ? `<button class="btn btn-tichy btn-maly" data-paleta="${i}" title="Zaokrouhlit na celé palety">📦</button>` : ''}
-        <button class="btn btn-tichy btn-maly" data-material="${i}">${r.material ? 'Změnit' : 'Materiál'}</button>
-      </div>
-    </div>`;
-  }).join('') + `<div class="kalk-souhrn">
-      <span><strong>Plocha:</strong> ${ks3(zaokr(h.plocha || 0))} m²${h.plochaOtvoru ? ` (odečteno ${ks3(zaokr(h.plochaOtvoru))} m² otvorů)` : ''}</span>
-      ${cena ? `<span><strong>Materiál orientačně:</strong> ${kc(zaokr(cena))} bez DPH</span>` : ''}
-      ${hmotnost ? `<span><strong>Hmotnost:</strong> ${ks3(Math.round(hmotnost))} kg</span>` : ''}
-      ${palety.length ? `<span><strong>Palety:</strong> ${esc(palety.join(', '))}</span>` : ''}
-    </div>`;
-}
-
-/* ---------- obsluha ---------- */
-$('#kl-druhy').addEventListener('click', e => {
-  const b = e.target.closest('[data-druh]'); if (!b) return;
-  kalkDruh = b.dataset.druh; kalkRadky = []; kalkOtvory = [];
-  vykresliDruhy(); vykresliVstupy(false);
-});
-
-$('#kl-rezim').addEventListener('click', e => {
-  const b = e.target.closest('[data-rezim]'); if (!b) return;
-  kalkRezim = b.dataset.rezim;
-  $$('#kl-rezim .chip').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.rezim === kalkRezim)));
-  vykresliVstupy();
-});
-
-$('#kl-tipy').addEventListener('click', () => {
-  kalkTipy = !kalkTipy;
-  $('#kl-tipy').textContent = kalkTipy ? 'Skrýt nápovědu' : 'Zobrazit nápovědu';
-  $$('#kl-vstupy .tip').forEach(t => t.classList.toggle('skryt', !kalkTipy));
-});
-
-$('#kl-jak-prep').addEventListener('click', () => $('#kl-jak').classList.toggle('skryt'));
-
-$('#kl-sablony').addEventListener('click', e => {
-  const b = e.target.closest('[data-sablona]');
-  if (b) {
-    const s = KALK[kalkDruh].sablony[Number(b.dataset.sablona)];
-    Object.entries(s.h).forEach(([id, v]) => {
-      const el = $('#kl-' + id);
-      if (el) el.value = typeof v === 'number' ? vPole(v) : v;
-      const pole = KALK[kalkDruh].pole.find(f => f.id === id);
-      if (pole) pole.v = typeof v === 'number' ? vPole(v) : v;   // platí i pro skrytá pole
-    });
-    $$('#kl-sablony .chip-metr').forEach(x => x.classList.toggle('aktivni', x === b));
-    prepocitej();
-    return;
-  }
-  if (e.target.closest('#kl-material')) otevriVyber('katalog', prevezmiRozmer);
-});
-
-$('#kl-vstupy').addEventListener('input', prepocitej);
-$('#kl-vstupy').addEventListener('change', prepocitej);
-
-$('#kl-otvory-blok').addEventListener('click', e => {
-  const pridat = e.target.closest('[data-otvor]');
-  if (pridat) {
-    const [s, v] = pridat.dataset.otvor.split(',').map(Number);
-    kalkOtvory.push({ s, v, n: 1 });
-    vykresliOtvory(); prepocitej(); return;
-  }
-  const smazat = e.target.closest('[data-otvor-smazat]');
-  if (smazat) { kalkOtvory.splice(Number(smazat.dataset.otvorSmazat), 1); vykresliOtvory(); prepocitej(); }
-});
-
-$('#kl-otvory').addEventListener('input', e => {
-  const t = e.target;
-  const zmena = [['otvorS', 's'], ['otvorV', 'v'], ['otvorN', 'n']].find(([d]) => t.dataset[d] !== undefined);
-  if (!zmena) return;
-  kalkOtvory[Number(t.dataset[zmena[0]])][zmena[1]] = cislo(t.value) ?? 0;
-  prepocitej();
-});
-
-$('#kl-vysledek').addEventListener('click', async e => {
-  const mat = e.target.closest('[data-material]');
-  if (mat) {
-    const r = kalkRadky[Number(mat.dataset.material)];
-    otevriVyber(r.material?.katalog_id || !stav.cenik.length ? 'katalog' : 'cenik', async (zdroj, rezim) => {
-      const puvodniMj = r.material?.mj || r.mj;
-      pripojMaterial(r, zdroj, rezim);
-      await nactiKatalogoveCeny([r.material?.katalog_id]);
-      const prevod = prepoctiMnozstvi(r.mnozstvi, puvodniMj, r.material.mj, r.material.katalog_id);
-      if (prevod && prevod.mnozstvi != null
-          && confirm(`Materiál se prodává na „${r.material.mj}", počítáno bylo v „${puvodniMj}".\n\nPřepočítat? ${prevod.popis} = ${ks(prevod.mnozstvi)} ${r.material.mj}`)) {
-        r.mnozstvi = prevod.mnozstvi;
-        r.zaklad += ', přepočteno: ' + prevod.popis;
-      } else if (prevod) {
-        toast(`Pozor: počítáno v „${puvodniMj}", materiál se prodává na „${r.material.mj}". Uprav množství.`, true);
-      }
-      vykresliVysledek(hodnoty());
-    });
-    return;
-  }
-  const pal = e.target.closest('[data-paleta]');
-  if (pal) {
-    const r = kalkRadky[Number(pal.dataset.paleta)];
-    const k = stav.katalogCeny[r.material.katalog_id];
-    const palet = Math.ceil(r.mnozstvi / k.pocet_na_palete);
-    r.mnozstvi = palet * k.pocet_na_palete;
-    r.zaklad += `, zaokrouhleno na ${palet} ${palet === 1 ? 'paletu' : 'palety'}`;
-    vykresliVysledek(hodnoty());
-    toast(`Zaokrouhleno na ${palet} ${palet === 1 ? 'celou paletu' : 'celé palety'}.`);
-  }
-});
-
-/** Z vybraného materiálu vytáhne rozměry a přiřadí ho hlavnímu řádku. */
-function prevezmiRozmer(k) {
-  const c = String(k.rozmer || '').split(/[xX×*]/).map(x => cislo(x)).filter(n => n != null && n > 0);
-  if (c.length >= 2) {
-    const setr = c.slice().sort((a, b) => b - a);
-    const vloz = (id, v) => { const el = $('#kl-' + id); if (el) el.value = vPole(v); const f = KALK[kalkDruh].pole.find(x => x.id === id); if (f) f.v = vPole(v); };
-    if (kalkDruh === 'zdivo') { vloz('td', setr[0]); vloz('tv', setr[1]); if (c.length >= 3) vloz('tl', setr[2]); }
-    else { vloz('kd', setr[0]); vloz('ksi', setr[1]); }
-    toast('Rozměr převzat z katalogu: ' + k.rozmer);
-  } else {
-    toast('Materiál nemá ve feedu rozměr, doplň ho ručně.', true);
-  }
-  prepocitej();
-  const hlavni = kalkRadky[0];
-  if (hlavni) {
-    pripojMaterial(hlavni, k, 'katalog');
-    nactiKatalogoveCeny([k.id]).then(() => vykresliVysledek(hodnoty()));
-  }
-}
-
-function pripojMaterial(radek, zdroj, rezim) {
-  if (rezim === 'cenik') {
-    radek.material = { cenik_id: zdroj.id, katalog_id: zdroj.katalog_id || null, nazev: zdroj.nazev,
-      mj: zdroj.mj || radek.mj, cena: zdroj.prodejni_bez_dph ?? 0,
-      sazba_dph: Number(zdroj.sazba_dph ?? 21), typ: zdroj.typ || 'material' };
-  } else {
-    const sazba = Number(zdroj.sazba_dph ?? 21);
-    const vCeniku = stav.cenik.find(c => c.katalog_id === zdroj.id);
-    radek.material = { cenik_id: vCeniku?.id || null, katalog_id: zdroj.id, nazev: zdroj.nazev,
-      mj: (zdroj.mj || radek.mj).toLowerCase(),
-      cena: vCeniku?.prodejni_bez_dph ?? (zdroj.cena_s_dph != null ? zaokr(zdroj.cena_s_dph / (1 + sazba / 100)) : 0),
-      sazba_dph: sazba, typ: 'material' };
-  }
-}
-
-$('#kl-vycistit').addEventListener('click', () => {
-  kalkRadky = []; kalkOtvory = [];
-  KALK[kalkDruh].pole.forEach(f => { if (!f.typ) f.v = f.v; });
-  vykresliVstupy(false);
-});
-
-$('#kl-do-nabidky').addEventListener('click', async () => {
-  if (!kalkRadky.length) return toast('Není co vložit, nejdřív vyplň rozměry.', true);
-  if (!stav.doklad) { await novyDoklad('nabidka'); if (!stav.doklad) return; }
-  kalkRadky.forEach(r => {
-    const m = r.material;
-    stav.polozky.push({
-      cenik_id: m?.cenik_id || null, katalog_id: m?.katalog_id || null,
-      typ: m?.typ || 'material', nazev: m?.nazev || r.nazev, mj: m?.mj || r.mj,
-      mnozstvi: r.mnozstvi, cena_bez_dph: m?.cena ?? 0, sleva_pct: 0,
-      sazba_dph: stav.firma.platce_dph ? (m?.sazba_dph ?? 21) : 0,
-      mnozstviPozor: !!(m && mjNorm(m.mj) !== mjNorm(r.mj)),
-      poznamka: KALK[kalkDruh].nazev + ': ' + r.zaklad
-    });
-  });
-  await nactiKatalogoveCeny(stav.polozky.map(x => x.katalog_id));
-  vykresliPolozky();
-  prepniTab('doklad');
-  toast(`Do dokladu ${stav.doklad.cislo} vloženo ${kalkRadky.length} položek. Zkontroluj ceny a ulož.`);
-});
-
-vykresliDruhy();
-vykresliVstupy(false);
-
-
-/* ================= SMLOUVA O DÍLO ================= */
-
-/** Sestaví text smlouvy ze zadaných údajů. Uživatel ho pak může libovolně přepsat. */
-/** Odběratel tak, jak je právě vybraný ve formuláři – ještě před uložením. */
-function aktualniOdberatel() {
-  const k = stav.kontakty.find(x => x.id === $('#d-kontakt').value);
-  if (k) return { nazev: k.nazev, ico: k.ico, dic: k.dic, ulice: k.ulice, mesto: k.mesto, psc: k.psc, email: k.email, telefon: k.telefon };
-  return stav.doklad?.odberatel || {};
-}
-
-function textSmlouvy() {
-  const d = stav.doklad, o = aktualniOdberatel(), f = firmaBlok(), s = souhrnDoklad();
-  const cena = s.bez + s.dph;
-  const zaloha = cislo($('#d-zaloha').value) ?? 0;
-  const zaruka = cislo($('#d-zaruka').value) ?? 24;
-  const misto = $('#d-misto').value.trim() || '(doplň místo plnění)';
-  const od = $('#d-od').value ? datum($('#d-od').value) : '(doplň termín zahájení)';
-  const doDne = $('#d-do').value ? datum($('#d-do').value) : '(doplň termín dokončení)';
-  const predmet = $('#d-uvod').value.trim() || '(doplň předmět díla)';
-  const adresaO = [o.ulice, [o.psc, o.mesto].filter(Boolean).join(' ')].filter(Boolean).join(', ');
-  const cenaText = stav.firma.platce_dph
-    ? `${kc(s.bez)} bez DPH, DPH ${kc(s.dph)}, celkem ${kc(cena)} včetně DPH`
-    : `${kc(s.bez)}. Zhotovitel není plátcem DPH.`;
-  const zalohaCastka = zaokr(cena * zaloha / 100);
-
-  return `SMLOUVA O DÍLO č. ${d.cislo}
-uzavřená podle § 2586 a násl. zákona č. 89/2012 Sb., občanský zákoník
-
-I. SMLUVNÍ STRANY
-
-Zhotovitel: ${f.nazev}
-Sídlo: ${f.adresa || '(doplň adresu v kartě Firma)'}
-IČO: ${f.ico || '(doplň)'}${f.dic ? ', DIČ: ' + f.dic : ''}
-Bankovní účet: ${f.ucet || '(doplň číslo účtu v kartě Firma)'}
-Telefon: ${f.telefon || '(doplň)'}
-
-Objednatel: ${o.nazev || '(vyber odběratele)'}
-Adresa: ${adresaO || '(doplň adresu odběratele)'}
-${o.ico ? 'IČO: ' + o.ico : ''}${o.dic ? ', DIČ: ' + o.dic : ''}
-${o.telefon ? 'Telefon: ' + o.telefon : ''}${o.email ? ', E-mail: ' + o.email : ''}
-
-II. PŘEDMĚT DÍLA
-
-1. Zhotovitel se zavazuje provést pro objednatele na svůj náklad a nebezpečí dílo:
-${predmet}
-2. Rozsah díla je podrobně vymezen v soupisu prací a materiálu, který je nedílnou přílohou této smlouvy.
-3. Objednatel se zavazuje dokončené dílo převzít a zaplatit sjednanou cenu.
-
-III. MÍSTO A DOBA PLNĚNÍ
-
-1. Místem plnění je: ${misto}
-2. Zhotovitel zahájí práce dne ${od} a dílo dokončí a předá nejpozději dne ${doDne}.
-3. Termín se prodlužuje o dobu, po kterou zhotovitel nemohl pracovat z důvodů na straně objednatele, pro nepříznivé počasí znemožňující technologické postupy nebo z důvodu vyšší moci.
-4. Objednatel zajistí zhotoviteli přístup na místo plnění, odběr elektrické energie a vody a prostor pro uskladnění materiálu.
-
-IV. CENA DÍLA
-
-1. Cena díla je sjednána dohodou stran ve výši ${cenaText}
-2. Cena vychází ze soupisu prací a materiálu podle přílohy této smlouvy a platí ke dni jejího podpisu.
-3. Práce nad rámec sjednaného rozsahu (vícepráce) budou provedeny jen na základě písemného odsouhlasení objednatelem, včetně jejich ceny a vlivu na termín dokončení.
-4. Zjistí-li zhotovitel při provádění díla skryté vady podkladu nebo jiné okolnosti, které nebylo možné předem zjistit, oznámí to objednateli a strany se dohodnou na dalším postupu.
-
-V. PLATEBNÍ PODMÍNKY
-
-${zaloha > 0
-  ? `1. Objednatel uhradí zálohu ve výši ${ks(zaloha)} % z ceny díla, tj. ${kc(zalohaCastka)}, do 7 dnů od podpisu této smlouvy.
-2. Zbývající část ceny uhradí objednatel na základě faktury vystavené po předání díla, se splatností 14 dnů.`
-  : `1. Cena díla bude uhrazena na základě faktury vystavené po předání díla, se splatností 14 dnů.`}
-3. Platby se provádějí převodem na účet zhotovitele uvedený v čl. I.
-4. Při prodlení s úhradou má zhotovitel právo na úrok z prodlení ve výši stanovené právním předpisem.
-
-VI. PROVEDENÍ DÍLA A SOUČINNOST
-
-1. Zhotovitel provede dílo v odpovídající kvalitě, v souladu s platnými technickými normami a technologickými postupy výrobců použitých materiálů.
-2. Zhotovitel odpovídá za pořádek a bezpečnost na pracovišti a po dokončení prací místo vyklidí.
-3. Objednatel je oprávněn průběh prací kontrolovat a na zjištěné nedostatky bez odkladu upozornit.
-4. Práce, které budou dalším postupem zakryty, vyzve zhotovitel objednatele ke kontrole nejméně 2 pracovní dny předem.
-
-VII. PŘEDÁNÍ DÍLA A ZÁRUKA
-
-1. O předání a převzetí díla sepíší strany předávací protokol. Drobné vady a nedodělky nebránící užívání nejsou důvodem k odmítnutí převzetí.
-2. Zhotovitel poskytuje na provedené práce záruku ${ks(zaruka)} měsíců ode dne předání díla. Na dodaný materiál platí záruka poskytnutá jeho výrobcem.
-3. Záruka se nevztahuje na vady způsobené běžným opotřebením, nesprávným užíváním, zásahem třetí osoby nebo neprovedením běžné údržby.
-4. Vady v záruce uplatní objednatel písemně bez zbytečného odkladu po jejich zjištění.
-
-VIII. ODSTOUPENÍ OD SMLOUVY
-
-1. Od smlouvy může kterákoli strana odstoupit při podstatném porušení povinností druhou stranou, které nebylo odstraněno ani v dodatečné lhůtě 14 dnů.
-2. Při odstoupení uhradí objednatel zhotoviteli prokazatelně provedené práce a účelně vynaložený materiál.
-
-IX. ZÁVĚREČNÁ UJEDNÁNÍ
-
-1. Smlouva se uzavírá ve dvou stejnopisech, každá strana obdrží jeden.
-2. Změny a doplňky lze činit pouze písemnými dodatky podepsanými oběma stranami.
-3. Vztahy touto smlouvou neupravené se řídí občanským zákoníkem.
-4. Strany prohlašují, že si smlouvu přečetly, souhlasí s jejím obsahem a uzavírají ji svobodně a vážně, což stvrzují svými podpisy.`;
-}
-
-/** Hodnoty, které do textu doplnila aplikace – v náhledu se zvýrazní. */
-function dopocitaneHodnoty() {
-  const o = aktualniOdberatel(), f = firmaBlok(), s = souhrnDoklad();
-  const cena = s.bez + s.dph;
-  const zaloha = cislo($('#d-zaloha').value) ?? 0;
-  return [
-    stav.doklad?.cislo, f.nazev, f.adresa, f.ico, f.dic, f.ucet, f.telefon,
-    o.nazev, o.ico, o.dic, o.telefon, o.email,
-    [o.ulice, [o.psc, o.mesto].filter(Boolean).join(' ')].filter(Boolean).join(', '),
-    $('#d-uvod').value.trim(), $('#d-misto').value.trim(),
-    $('#d-od').value ? datum($('#d-od').value) : '', $('#d-do').value ? datum($('#d-do').value) : '',
-    kc(s.bez), kc(s.dph), kc(cena), kc(zaokr(cena * zaloha / 100)),
-    zaloha ? ks(zaloha) + ' %' : '', ks(cislo($('#d-zaruka').value) ?? 24) + ' měsíců'
-  ].filter(x => x && String(x).trim().length > 2);
-}
-
-function obnovNahled() {
-  const el = $('#d-nahled');
-  if (!el || el.classList.contains('skryt')) return;
-  const text = $('#d-text').value || '';
-  const hodnoty = [...new Set(dopocitaneHodnoty())].sort((a, b) => String(b).length - String(a).length);
-  let html = esc(text);
-  hodnoty.forEach(h => {
-    const vzor = esc(String(h)).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    html = html.replace(new RegExp('(?![^<]*>)' + vzor, 'g'), m => `<mark>${m}</mark>`);
-  });
-  el.innerHTML = html || '<span class="napoveda">Text zatím není vyplněný.</span>';
-}
-
-$('#d-text').addEventListener('input', obnovNahled);
-$('#d-nahled-prep').addEventListener('click', () => {
-  const el = $('#d-nahled');
-  el.classList.toggle('skryt');
-  $('#d-nahled-prep').textContent = el.classList.contains('skryt') ? 'Zobrazit náhled' : 'Skrýt náhled';
-  obnovNahled();
-});
-
-/* ---- vlastní vzor smlouvy ---- */
-$('#d-vzor-ulozit').addEventListener('click', async () => {
-  const t = $('#d-text').value.trim();
-  if (!t) return toast('Nejdřív text sestav nebo napiš.', true);
-  const { error } = await sb.from('firmy').update({ sablona_smlouvy: t }).eq('id', stav.firma.id);
-  if (error) return toast('Vzor se nepodařilo uložit: ' + prelozChybu(error), true);
-  stav.firma.sablona_smlouvy = t;
-  toast('Uloženo jako tvůj vzor. Nová smlouva ho použije rovnou.');
-});
-
-$('#d-vzor-nacist').addEventListener('click', () => {
-  if (!stav.firma.sablona_smlouvy) return toast('Zatím nemáš uložený žádný vzor.', true);
-  if ($('#d-text').value.trim() && !confirm('Nahradit text tvým uloženým vzorem?')) return;
-  $('#d-text').value = stav.firma.sablona_smlouvy;
-  obnovNahled();
-  toast('Vzor načten. Zkontroluj údaje, které se v něm liší.');
-});
-
-$('#d-generovat').addEventListener('click', () => {
-  if ($('#d-text').value.trim() && !confirm('Přepsat text smlouvy novým textem ze zadaných údajů?\n\nTvoje úpravy se ztratí.')) return;
-  $('#d-text').value = textSmlouvy();
-  obnovNahled();
-  toast('Text sestaven. Projdi ho a uprav podle konkrétní zakázky.');
-});
-
-// změna údajů nahoře se hned projeví ve zvýraznění náhledu
-['d-kontakt', 'd-uvod', 'd-misto', 'd-od', 'd-do', 'd-zaruka', 'd-zaloha'].forEach(id =>
-  $('#' + id).addEventListener('change', obnovNahled));
-
-$('#dk-nova-smlouva').addEventListener('click', () => novyDoklad('smlouva'));
-
-$('#d-na-smlouvu').addEventListener('click', async () => {
-  if (!(await ulozDoklad(true))) return;
-  await doCeniku();
-  await novyDoklad('smlouva', {
-    kontakt_id: stav.doklad.kontakt_id, odberatel: stav.doklad.odberatel,
-    uvod: stav.doklad.uvod, poznamka: stav.doklad.poznamka, polozky: stav.polozky
-  });
-  $('#d-text').value = stav.firma.sablona_smlouvy || textSmlouvy();
-  obnovNahled();
-  toast('Smlouva vytvořená z nabídky. Zkontroluj termíny a text, pak ulož.');
-});
-
-/* ---- tisk smlouvy ---- */
-function tiskSmlouva() {
-  const d = stav.doklad, s = souhrnDoklad();
-  const radky = stav.polozky.filter(p => (p.nazev || '').trim()).map((p, i) => {
-    const c = zaokr((Number(p.mnozstvi) || 0) * (Number(p.cena_bez_dph) || 0) * (1 - (Number(p.sleva_pct) || 0) / 100));
-    return `<tr><td class="c">${i + 1}</td><td>${esc(p.nazev)}</td><td class="c">${ks(p.mnozstvi)}</td>
-      <td>${esc(p.mj || '')}</td><td class="c">${kc(p.cena_bez_dph)}</td><td class="c">${kc(c)}</td></tr>`;
-  }).join('');
-  const f = firmaBlok(), o = aktualniOdberatel();
-  const text = ($('#d-text').value.trim() || textSmlouvy());
-
-  $('#tisk').innerHTML = `
-    <div style="white-space:pre-line;font-size:12px;line-height:1.55">${esc(text)}</div>
-    <div class="tisk-strany" style="margin-top:34px">
-      <div style="text-align:center">V ................................ dne ................<br><br><br>
-        ..............................................<br>${esc(f.nazev)}<br>zhotovitel</div>
-      <div style="text-align:center">V ................................ dne ................<br><br><br>
-        ..............................................<br>${esc(o.nazev || 'objednatel')}<br>objednatel</div>
-    </div>
-    <div style="page-break-before:always">
-      <h1>Příloha č. 1 – Soupis prací a materiálu</h1>
-      <div>ke smlouvě o dílo č. ${esc(d.cislo)}</div>
-      <table><thead><tr><th class="c">#</th><th>Položka</th><th class="c">Množ.</th><th>MJ</th>
-        <th class="c">Cena/MJ</th><th class="c">Celkem bez DPH</th></tr></thead><tbody>${radky}</tbody></table>
-      <div class="tisk-souhrn"><table>
-        <tr><td>Základ bez DPH</td><td class="c">${kc(s.bez)}</td></tr>
-        <tr><td>DPH</td><td class="c">${kc(s.dph)}</td></tr>
-        <tr><td><strong>Cena díla celkem</strong></td><td class="c"><strong>${kc(s.bez + s.dph)}</strong></td></tr>
-      </table></div>
-      <div class="tisk-pata">Ceny materiálu platí ke dni podpisu smlouvy a řídí se aktuálním ceníkem dodavatele.</div>
-    </div>`;
-  window.print();
-}
-
-/* ================= TISK ================= */
-function firmaBlok() {
-  const f = stav.firma;
-  return { nazev: f.nazev, ico: f.ico, dic: f.dic, adresa: f.adresa || '', telefon: f.telefon || '', ucet: f.ucet || '' };
-}
-
-/* ================= ARES ================= */
-function icoOk(ico) {
-  if (!/^\d{8}$/.test(ico)) return false;
-  let s = 0;
-  for (let i = 0; i < 7; i++) s += Number(ico[i]) * (8 - i);
-  const z = s % 11, k = z === 0 ? 1 : z === 1 ? 0 : 11 - z;
-  return k === Number(ico[7]);
-}
-
-async function zAres(icoPole, tlacitko) {
-  const ico = icoPole.value.replace(/\s/g, '').padStart(8, '0');
-  if (!icoOk(ico)) { toast('Zadej platné IČO (8 číslic).', true); icoPole.focus(); return null; }
-  tlacitko.disabled = true;
-  const puvodni = tlacitko.textContent;
-  tlacitko.textContent = '…';
-  const { data, error } = await sb.functions.invoke('ares', { body: { ico } });
-  tlacitko.disabled = false; tlacitko.textContent = puvodni;
-  if (error || !data || data.chyba) {
-    toast('ARES: ' + (data?.chyba || prelozChybu(error) || 'nepodařilo se načíst'), true);
-    return null;
-  }
-  icoPole.value = data.ico;
-  if (data.zanikl) toast('Pozor: subjekt je v ARES veden jako zaniklý.', true);
-  return data;
-}
-
-$('#f-ares').addEventListener('click', async e => {
-  const d = await zAres($('#f-ico'), e.target); if (!d) return;
-  if (d.nazev) $('#f-nazev').value = d.nazev;
-  if (d.dic) $('#f-dic').value = d.dic;
-  $('#f-adresa').value = [d.ulice, [d.psc, d.mesto].filter(Boolean).join(' ')].filter(Boolean).join(', ');
-  if (d.dic) $('#f-platce').checked = true;
-  toast('Údaje doplněny z ARES. Zkontroluj je a ulož.');
-});
-
-$('#kd-ares').addEventListener('click', async e => {
-  const d = await zAres($('#kd-ico'), e.target); if (!d) return;
-  if (d.nazev) $('#kd-nazev').value = d.nazev;
-  if (d.dic) $('#kd-dic').value = d.dic;
-  if (d.ulice) $('#kd-ulice').value = d.ulice;
-  if (d.mesto) $('#kd-mesto').value = d.mesto;
-  if (d.psc) $('#kd-psc').value = d.psc;
-  toast('Údaje doplněny z ARES. Zkontroluj je a ulož.');
-});
-
-function tiskDoklad() {
-  const d = stav.doklad, o = d.odberatel || {}, f = firmaBlok(), s = souhrnDoklad();
-  const faktura = d.typ === 'faktura';
-  const radky = stav.polozky.filter(p => (p.nazev || '').trim()).map((p, i) => {
-    const c = zaokr((Number(p.mnozstvi) || 0) * (Number(p.cena_bez_dph) || 0) * (1 - (Number(p.sleva_pct) || 0) / 100));
-    return `<tr><td class="c">${i + 1}</td><td>${esc(p.nazev)}</td><td class="c">${ks(p.mnozstvi)}</td>
-      <td>${esc(p.mj || '')}</td><td class="c">${kc(p.cena_bez_dph)}</td>
-      <td class="c">${p.sleva_pct ? ks(p.sleva_pct) + ' %' : ''}</td>
-      <td class="c">${ks(p.sazba_dph)} %</td><td class="c">${kc(c)}</td></tr>`;
-  }).join('');
-  $('#tisk').innerHTML = `
-    <div class="tisk-hlava">
-      <div><h1>${faktura ? 'Faktura' : 'Cenová nabídka'} ${esc(d.cislo)}</h1>
-        <div>Vystaveno ${esc(datum(d.datum_vystaveni))}${faktura && d.datum_plneni ? ', datum plnění ' + esc(datum(d.datum_plneni)) : ''}</div>
-        ${faktura ? `<div>Splatnost ${esc(datum(d.datum_splatnosti))}${d.variabilni_symbol ? ', VS ' + esc(d.variabilni_symbol) : ''}</div>` : ''}</div>
-      <div style="text-align:right"><strong>${esc(f.nazev)}</strong><br>${esc(f.adresa)}<br>
-        ${f.ico ? 'IČO ' + esc(f.ico) : ''} ${f.dic ? ' DIČ ' + esc(f.dic) : ''}<br>${esc(f.telefon)}</div>
-    </div>
-    <div class="tisk-strany">
-      <div><h3>Dodavatel</h3><strong>${esc(f.nazev)}</strong><br>${esc(f.adresa)}<br>
-        ${f.ico ? 'IČO ' + esc(f.ico) + '<br>' : ''}${f.dic ? 'DIČ ' + esc(f.dic) + '<br>' : ''}
-        ${!stav.firma.platce_dph ? 'Neplátce DPH<br>' : ''}${f.ucet ? 'Účet ' + esc(f.ucet) : ''}</div>
-      <div><h3>Odběratel</h3><strong>${esc(o.nazev || '–')}</strong><br>
-        ${esc([o.ulice, [o.psc, o.mesto].filter(Boolean).join(' ')].filter(Boolean).join(', '))}<br>
-        ${o.ico ? 'IČO ' + esc(o.ico) + '<br>' : ''}${o.dic ? 'DIČ ' + esc(o.dic) : ''}</div>
-    </div>
-    ${d.uvod ? `<p>${esc(d.uvod)}</p>` : ''}
-    <table><thead><tr><th class="c">#</th><th>Položka</th><th class="c">Množ.</th><th>MJ</th>
-      <th class="c">Cena/MJ</th><th class="c">Sleva</th><th class="c">DPH</th><th class="c">Celkem bez DPH</th></tr></thead>
-      <tbody>${radky}</tbody></table>
-    <div class="tisk-souhrn"><table>
-      <tr><td>Základ bez DPH</td><td class="c">${kc(s.bez)}</td></tr>
-      <tr><td>DPH</td><td class="c">${kc(s.dph)}</td></tr>
-      <tr><td><strong>Celkem k úhradě</strong></td><td class="c"><strong>${kc(s.bez + s.dph)}</strong></td></tr>
-    </table></div>
-    ${d.poznamka ? `<p>${esc(d.poznamka)}</p>` : ''}
-    <div class="tisk-pata">${faktura
-      ? 'Fakturu uhraďte na uvedený účet do data splatnosti.'
-      : 'Ceny materiálu platí ke dni vystavení nabídky a řídí se aktuálním ceníkem dodavatele.'}</div>`;
-  window.print();
-}
-$('#d-tisk').addEventListener('click', async () => {
-  if (!(await ulozDoklad(true))) return;
-  await doCeniku();
-  if (stav.doklad.typ === 'smlouva') tiskSmlouva(); else tiskDoklad();
-});
-
-$('#d-objednavka').addEventListener('click', async () => {
-  if (!(await ulozDoklad(true))) return;
-  const mat = stav.polozky.filter(p => p.katalog_id);
-  if (!mat.length) return toast('V nabídce není žádný materiál z katalogu.', true);
-  const { data } = await sb.from('katalog').select('id, kod, ean, nazev, mj, zasoby').in('id', mat.map(p => p.katalog_id));
-  const mapa = Object.fromEntries((data || []).map(k => [k.id, k]));
-  const radky = mat.map((p, i) => {
-    const k = mapa[p.katalog_id] || {};
-    const m = Number(k.zasoby?.malesice) || 0, l = Number(k.zasoby?.liben) || 0;
-    return `<tr><td class="c">${i + 1}</td><td>${esc(k.kod || '')}</td><td>${esc(p.nazev)}</td>
-      <td class="c">${ks(p.mnozstvi)}</td><td>${esc(p.mj || '')}</td>
-      <td class="c">${ks(m)}</td><td class="c">${ks(l)}</td></tr>`;
-  }).join('');
-  const f = firmaBlok();
-  $('#tisk').innerHTML = `
-    <div class="tisk-hlava"><div><h1>Objednávkový list</h1>
-      <div>K nabídce ${esc(stav.doklad.cislo)}, ${esc(datum(dnes()))}</div></div>
-      <div style="text-align:right"><strong>${esc(f.nazev)}</strong><br>${esc(f.telefon)}<br>${f.ico ? 'IČO ' + esc(f.ico) : ''}</div></div>
-    <table><thead><tr><th class="c">#</th><th>Kód</th><th>Materiál</th><th class="c">Množství</th><th>MJ</th>
-      <th class="c">Malešice</th><th class="c">Libeň</th></tr></thead><tbody>${radky}</tbody></table>
-    <div class="tisk-pata">Zásoby jsou orientační podle posledního importu katalogu. Dostupnost potvrdí sklad při objednání.</div>`;
-  window.print();
-});
+  // rok
+  document.getElementById('year').textContent=new Date().getFullYear();
+  // mobilní menu
+  var burger=document.getElementById('burger'), nl=document.getElementById('navLinks');
+  burger.addEventListener('click',function(){ nl.classList.toggle('open'); });
+  nl.addEventListener('click',function(e){ if(e.target.tagName==='A') nl.classList.remove('open'); });
+  // scroll reveal
+  var io=new IntersectionObserver(function(es){ es.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target);} }); },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
 </script>
 </body>
 </html>
